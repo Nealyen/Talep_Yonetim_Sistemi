@@ -9,3 +9,29 @@
 @import "./_responsive";
 @import "./_utils";
 @import "./_typography";
+
+/* Tüm temalarda açılır menü (Dropdown) seçili öğe okunabilirlik garantisi */
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight * {
+    color: #ffffff !important;
+}
+
+/* Hover (Üzerine gelme) durumları için esnek geçiş */
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):hover {
+    background-color: var(--surface-hover) !important;
+    color: var(--text-color) !important;
+    transform: translateX(6px) !important;
+    transition: transform 0.2s ease, background-color 0.2s ease !important;
+}
+
+/* Dropdown panelini her zaman ve kesin olarak kutunun altına sabitler */
+.p-dropdown-panel.always-bottom-panel {
+    top: 100% !important;
+    bottom: auto !important;
+    margin-top: 4px !important;
+    transform-origin: top center !important;
+}

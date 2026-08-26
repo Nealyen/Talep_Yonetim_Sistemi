@@ -1,17 +1,30 @@
 'use client';
 
 import { PrimeReactContext } from 'primereact/api';
-import { Button } from 'primereact/button';
-import { InputSwitch, InputSwitchChangeEvent } from 'primereact/inputswitch';
 import { RadioButton, RadioButtonChangeEvent } from 'primereact/radiobutton';
 import { Sidebar } from 'primereact/sidebar';
-import { classNames } from 'primereact/utils';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { AppConfigProps, LayoutConfig, LayoutState } from '@/types';
 import { LayoutContext } from './context/layoutcontext';
 
+const themeCookieName = 'selectedTheme';
+
+const saveThemeCookie = (theme: string, colorScheme: string) => {
+    document.cookie = `${themeCookieName}=${encodeURIComponent(JSON.stringify({ theme, colorScheme }))}; path=/; max-age=31536000; SameSite=Lax`;
+};
+
+const readThemeCookie = () => {
+    const cookie = document.cookie.split('; ').find((item) => item.startsWith(`${themeCookieName}=`));
+    if (!cookie) return null;
+
+    try {
+        return JSON.parse(decodeURIComponent(cookie.substring(themeCookieName.length + 1))) as { theme: string; colorScheme: string };
+    } catch {
+        return null;
+    }
+};
+
 const AppConfig = (props: AppConfigProps) => {
-    const [scales] = useState([12, 13, 14, 15, 16]);
     const { layoutConfig, setLayoutConfig, layoutState, setLayoutState } = useContext(LayoutContext);
     const { setRipple, changeTheme } = useContext(PrimeReactContext);
 
@@ -23,41 +36,28 @@ const AppConfig = (props: AppConfigProps) => {
         setLayoutState((prevState: LayoutState) => ({ ...prevState, configSidebarVisible: false }));
     };
 
-    const changeInputStyle = (e: RadioButtonChangeEvent) => {
-        setLayoutConfig((prevState: LayoutConfig) => ({ ...prevState, inputStyle: e.value }));
-    };
-
-    const changeRipple = (e: InputSwitchChangeEvent) => {
-        setRipple?.(e.value as boolean);
-        setLayoutConfig((prevState: LayoutConfig) => ({ ...prevState, ripple: e.value as boolean }));
-    };
-
     const changeMenuMode = (e: RadioButtonChangeEvent) => {
         setLayoutConfig((prevState: LayoutConfig) => ({ ...prevState, menuMode: e.value }));
     };
 
     const _changeTheme = (theme: string, colorScheme: string) => {
+        saveThemeCookie(theme, colorScheme);
         changeTheme?.(layoutConfig.theme, theme, 'theme-css', () => {
             setLayoutConfig((prevState: LayoutConfig) => ({ ...prevState, theme, colorScheme }));
         });
     };
 
-    const decrementScale = () => {
-        setLayoutConfig((prevState: LayoutConfig) => ({ ...prevState, scale: prevState.scale - 1 }));
-    };
-
-    const incrementScale = () => {
-        setLayoutConfig((prevState: LayoutConfig) => ({ ...prevState, scale: prevState.scale + 1 }));
-    };
-
-    const applyScale = () => {
-        document.documentElement.style.fontSize = layoutConfig.scale + 'px';
-    };
-
     useEffect(() => {
-        applyScale();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [layoutConfig.scale]);
+        setRipple?.(true);
+        setLayoutConfig((prevState: LayoutConfig) => ({ ...prevState, inputStyle: 'outlined', ripple: true }));
+
+        const savedTheme = readThemeCookie();
+        if (savedTheme?.theme && savedTheme.colorScheme) {
+            changeTheme?.(layoutConfig.theme, savedTheme.theme, 'theme-css', () => {
+                setLayoutConfig((prevState: LayoutConfig) => ({ ...prevState, theme: savedTheme.theme, colorScheme: savedTheme.colorScheme }));
+            });
+        }
+    }, [setLayoutConfig, setRipple]);
 
     return (
         <>
@@ -68,17 +68,6 @@ const AppConfig = (props: AppConfigProps) => {
             <Sidebar visible={layoutState.configSidebarVisible} onHide={onConfigSidebarHide} position="right" className="layout-config-sidebar w-20rem">
                 {!props.simple && (
                     <>
-                        <h5>Scale</h5>
-                        <div className="flex align-items-center">
-                            <Button icon="pi pi-minus" type="button" onClick={decrementScale} rounded text className="w-2rem h-2rem mr-2" disabled={layoutConfig.scale === scales[0]}></Button>
-                            <div className="flex gap-2 align-items-center">
-                                {scales.map((item) => {
-                                    return <i className={classNames('pi pi-circle-fill', { 'text-primary-500': item === layoutConfig.scale, 'text-300': item !== layoutConfig.scale })} key={item}></i>;
-                                })}
-                            </div>
-                            <Button icon="pi pi-plus" type="button" onClick={incrementScale} rounded text className="w-2rem h-2rem ml-2" disabled={layoutConfig.scale === scales[scales.length - 1]}></Button>
-                        </div>
-
                         <h5>Menu Type</h5>
                         <div className="flex">
                             <div className="field-radiobutton flex-1">
@@ -91,155 +80,46 @@ const AppConfig = (props: AppConfigProps) => {
                             </div>
                         </div>
 
-                        <h5>Input Style</h5>
-                        <div className="flex">
-                            <div className="field-radiobutton flex-1">
-                                <RadioButton name="inputStyle" value={'outlined'} checked={layoutConfig.inputStyle === 'outlined'} onChange={(e) => changeInputStyle(e)} inputId="outlined_input"></RadioButton>
-                                <label htmlFor="outlined_input">Outlined</label>
-                            </div>
-                            <div className="field-radiobutton flex-1">
-                                <RadioButton name="inputStyle" value={'filled'} checked={layoutConfig.inputStyle === 'filled'} onChange={(e) => changeInputStyle(e)} inputId="filled_input"></RadioButton>
-                                <label htmlFor="filled_input">Filled</label>
-                            </div>
-                        </div>
-
-                        <h5>Ripple Effect</h5>
-                        <InputSwitch checked={layoutConfig.ripple as boolean} onChange={(e) => changeRipple(e)}></InputSwitch>
                     </>
                 )}
                 <h5>PrimeOne Design</h5>
+                <small className="block text-600 mb-2">Lara temaları: açık ve koyu renk seçenekleri</small>
                 <div className="grid">
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-light-indigo', 'light')}>
+                    <div className="col-3 flex flex-column align-items-center gap-1">
+                        <button title="Lara Indigo - Açık" aria-label="Lara Indigo - Açık" className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-light-indigo', 'light')}>
                             <img src="/layout/images/themes/lara-light-indigo.png" className="w-2rem h-2rem" alt="Lara Light Indigo" />
                         </button>
+                        <small className="text-center text-600">Indigo Açık</small>
                     </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-light-blue', 'light')}>
+                    <div className="col-3 flex flex-column align-items-center gap-1">
+                        <button title="Lara Mavi - Açık" aria-label="Lara Mavi - Açık" className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-light-blue', 'light')}>
                             <img src="/layout/images/themes/lara-light-blue.png" className="w-2rem h-2rem" alt="Lara Light Blue" />
                         </button>
+                        <small className="text-center text-600">Mavi Açık</small>
                     </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-light-purple', 'light')}>
+                    <div className="col-3 flex flex-column align-items-center gap-1">
+                        <button title="Lara Mor - Açık" aria-label="Lara Mor - Açık" className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-light-purple', 'light')}>
                             <img src="/layout/images/themes/lara-light-purple.png" className="w-2rem h-2rem" alt="Lara Light Purple" />
                         </button>
+                        <small className="text-center text-600">Mor Açık</small>
                     </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-light-teal', 'light')}>
+                    <div className="col-3 flex flex-column align-items-center gap-1">
+                        <button title="Lara Turkuaz - Açık" aria-label="Lara Turkuaz - Açık" className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-light-teal', 'light')}>
                             <img src="/layout/images/themes/lara-light-teal.png" className="w-2rem h-2rem" alt="Lara Light Teal" />
                         </button>
+                        <small className="text-center text-600">Turkuaz Açık</small>
                     </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-dark-indigo', 'dark')}>
+                    <div className="col-3 flex flex-column align-items-center gap-1">
+                        <button title="Lara Indigo - Koyu" aria-label="Lara Indigo - Koyu" className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-dark-indigo', 'dark')}>
                             <img src="/layout/images/themes/lara-dark-indigo.png" className="w-2rem h-2rem" alt="Lara Dark Indigo" />
                         </button>
+                        <small className="text-center text-600">Indigo Koyu</small>
                     </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-dark-blue', 'dark')}>
+                    <div className="col-3 flex flex-column align-items-center gap-1">
+                        <button title="Lara Mavi - Koyu" aria-label="Lara Mavi - Koyu" className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-dark-blue', 'dark')}>
                             <img src="/layout/images/themes/lara-dark-blue.png" className="w-2rem h-2rem" alt="Lara Dark Blue" />
                         </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-dark-purple', 'dark')}>
-                            <img src="/layout/images/themes/lara-dark-purple.png" className="w-2rem h-2rem" alt="Lara Dark Purple" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('lara-dark-teal', 'dark')}>
-                            <img src="/layout/images/themes/lara-dark-teal.png" className="w-2rem h-2rem" alt="Lara Dark Teal" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('soho-light', 'light')}>
-                            <img src="/layout/images/themes/soho-light.png" className="w-2rem h-2rem" alt="Soho Light" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('soho-dark', 'dark')}>
-                            <img src="/layout/images/themes/soho-dark.png" className="w-2rem h-2rem" alt="Soho Dark" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('viva-light', 'light')}>
-                            <img src="/layout/images/themes/viva-light.svg" className="w-2rem h-2rem" alt="Viva Light" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('viva-dark', 'dark')}>
-                            <img src="/layout/images/themes/viva-dark.svg" className="w-2rem h-2rem" alt="Viva Dark" />
-                        </button>
-                    </div>
-                </div>
-
-                <h5>Bootstrap</h5>
-                <div className="grid">
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('bootstrap4-light-blue', 'light')}>
-                            <img src="/layout/images/themes/bootstrap4-light-blue.svg" className="w-2rem h-2rem" alt="Bootstrap Light Blue" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('bootstrap4-light-purple', 'light')}>
-                            <img src="/layout/images/themes/bootstrap4-light-purple.svg" className="w-2rem h-2rem" alt="Bootstrap Light Purple" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('bootstrap4-dark-blue', 'dark')}>
-                            <img src="/layout/images/themes/bootstrap4-dark-blue.svg" className="w-2rem h-2rem" alt="Bootstrap Dark Blue" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('bootstrap4-dark-purple', 'dark')}>
-                            <img src="/layout/images/themes/bootstrap4-dark-purple.svg" className="w-2rem h-2rem" alt="Bootstrap Dark Purple" />
-                        </button>
-                    </div>
-                </div>
-
-                <h5>Material Design</h5>
-                <div className="grid">
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('md-light-indigo', 'light')}>
-                            <img src="/layout/images/themes/md-light-indigo.svg" className="w-2rem h-2rem" alt="Material Light Indigo" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('md-light-deeppurple', 'light')}>
-                            <img src="/layout/images/themes/md-light-deeppurple.svg" className="w-2rem h-2rem" alt="Material Light DeepPurple" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('md-dark-indigo', 'dark')}>
-                            <img src="/layout/images/themes/md-dark-indigo.svg" className="w-2rem h-2rem" alt="Material Dark Indigo" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('md-dark-deeppurple', 'dark')}>
-                            <img src="/layout/images/themes/md-dark-deeppurple.svg" className="w-2rem h-2rem" alt="Material Dark DeepPurple" />
-                        </button>
-                    </div>
-                </div>
-
-                <h5>Material Design Compact</h5>
-                <div className="grid">
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('mdc-light-indigo', 'light')}>
-                            <img src="/layout/images/themes/md-light-indigo.svg" className="w-2rem h-2rem" alt="Material Light Indigo" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('mdc-light-deeppurple', 'light')}>
-                            <img src="/layout/images/themes/md-light-deeppurple.svg" className="w-2rem h-2rem" alt="Material Light Deep Purple" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('mdc-dark-indigo', 'dark')}>
-                            <img src="/layout/images/themes/md-dark-indigo.svg" className="w-2rem h-2rem" alt="Material Dark Indigo" />
-                        </button>
-                    </div>
-                    <div className="col-3">
-                        <button className="p-link w-2rem h-2rem" onClick={() => _changeTheme('mdc-dark-deeppurple', 'dark')}>
-                            <img src="/layout/images/themes/md-dark-deeppurple.svg" className="w-2rem h-2rem" alt="Material Dark Deep Purple" />
-                        </button>
+                        <small className="text-center text-600">Mavi Koyu</small>
                     </div>
                 </div>
             </Sidebar>

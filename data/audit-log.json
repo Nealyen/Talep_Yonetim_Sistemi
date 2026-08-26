@@ -1,0 +1,383 @@
+[
+  {
+    "action": "TALEP_ISLEME_GERI_ALINDI",
+    "userId": "Çalışan-1",
+    "ticketId": "TLP-2026-021",
+    "detail": "{\"status\":\"İŞLEMDE\",\"actorRole\":\"ADMIN\"}",
+    "id": "AUD-1787728285849",
+    "date": "2026-08-26T07:11:25.849Z"
+  },
+  {
+    "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+    "userId": "Mehmet Demir",
+    "ticketId": "TLP-2026-021",
+    "detail": "{\"status\":\"ONAY_BEKLİYOR\",\"actorRole\":\"TEKNIK_UZMAN\"}",
+    "id": "AUD-1787727288570",
+    "date": "2026-08-26T06:54:48.570Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "Çalışan-1",
+    "ticketId": "TLP-2026-022",
+    "detail": "Talep oluşturuldu.",
+    "id": "AUD-1787727112747",
+    "date": "2026-08-26T06:51:52.747Z"
+  },
+  {
+    "action": "UZMAN_ATANDI",
+    "userId": "Mehmet Demir",
+    "ticketId": "TLP-2026-021",
+    "detail": "{\"assignee\":\"Mehmet Demir\",\"status\":\"İŞLEMDE\",\"actorRole\":\"TEKNIK_UZMAN\"}",
+    "id": "AUD-1787726375872",
+    "date": "2026-08-26T06:39:35.872Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "Çalışan-1",
+    "ticketId": "TLP-2026-021",
+    "detail": "Talep oluşturuldu.",
+    "id": "AUD-1787726181693",
+    "date": "2026-08-26T06:36:21.693Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "Çalışan-1",
+    "ticketId": "TLP-2026-020",
+    "detail": "Talep oluşturuldu.",
+    "id": "AUD-1787723937507",
+    "date": "2026-08-26T05:58:57.507Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "Çalışan-1",
+    "ticketId": "TLP-2026-019",
+    "detail": "Talep oluşturuldu.",
+    "id": "AUD-1787723804102",
+    "date": "2026-08-26T05:56:44.102Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "Çalışan-1",
+    "ticketId": "TLP-2026-018",
+    "detail": "Talep oluşturuldu.",
+    "id": "AUD-1787723431673",
+    "date": "2026-08-26T05:50:31.673Z"
+  },
+  {
+    "action": "UZMAN_ILISKISI_KESILDI",
+    "userId": "KOORDINATOR",
+    "ticketId": "TLP-2026-017",
+    "detail": "{\"assignee\":null,\"status\":\"YENİ\",\"actorRole\":\"KOORDINATOR\"}",
+    "id": "AUD-1787660129067",
+    "date": "2026-08-25T12:15:29.067Z"
+  },
+  {
+    "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+    "userId": "Mehmet Demir",
+    "ticketId": "TLP-2026-017",
+    "detail": "{\"status\":\"ONAY_BEKLİYOR\",\"actorRole\":\"TEKNIK_UZMAN\"}",
+    "id": "AUD-1787660081352",
+    "date": "2026-08-25T12:14:41.352Z"
+  },
+  {
+    "action": "TALEP_ISLEME_GERI_ALINDI",
+    "userId": "a",
+    "ticketId": "TLP-2026-017",
+    "detail": "{\"status\":\"İŞLEMDE\",\"actorRole\":\"ADMIN\"}",
+    "id": "AUD-1787575700665",
+    "date": "2026-08-24T12:48:20.665Z"
+  },
+  {
+    "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+    "userId": "Mehmet Demir",
+    "ticketId": "TLP-2026-017",
+    "detail": "{\"status\":\"ONAY_BEKLİYOR\",\"actorRole\":\"TEKNIK_UZMAN\"}",
+    "id": "AUD-1787560608205",
+    "date": "2026-08-24T08:36:48.205Z"
+  },
+  {
+    "action": "UZMAN_ATANDI",
+    "userId": "Mehmet Demir",
+    "ticketId": "TLP-2026-017",
+    "detail": "{\"assignee\":\"Mehmet Demir\",\"status\":\"İŞLEMDE\",\"actorRole\":\"TEKNIK_UZMAN\"}",
+    "id": "AUD-1787560578887",
+    "date": "2026-08-24T08:36:18.887Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "a",
+    "ticketId": "TLP-2026-017",
+    "detail": "Talep oluşturuldu.",
+    "id": "AUD-1787560545558",
+    "date": "2026-08-24T08:35:45.558Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "s",
+    "ticketId": "TLP-2026-016",
+    "detail": "Talep oluşturuldu.",
+    "id": "AUD-1787318190674",
+    "date": "2026-08-21T13:16:30.674Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "s",
+    "ticketId": "TLP-2026-015",
+    "detail": "Talep oluşturuldu.",
+    "id": "AUD-1787317966357",
+    "date": "2026-08-21T13:12:46.357Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "a",
+    "ticketId": "TLP-2026-014",
+    "detail": "Talep oluşturuldu.",
+    "id": "AUD-1787317941280",
+    "date": "2026-08-21T13:12:21.280Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "a",
+    "detail": "TLP-2026-013",
+    "id": "AUD-1787297036548",
+    "date": "2026-08-21T07:23:56.548Z"
+  },
+  {
+    "action": "UZMAN_ILISKISI_KESILDI",
+    "userId": "Teknik Uzman (Oturum Açık)",
+    "detail": "TLP-2026-011: {\"assignee\":null,\"status\":\"YENİ\"}",
+    "id": "AUD-1787296879120",
+    "date": "2026-08-21T07:21:19.120Z"
+  },
+  {
+    "action": "UZMAN_ATANDI",
+    "userId": "Teknik Uzman (Oturum Açık)",
+    "detail": "TLP-2026-011: {\"assignee\":\"Teknik Uzman (Oturum Açık)\",\"status\":\"İŞLEMDE\"}",
+    "id": "AUD-1787296829983",
+    "date": "2026-08-21T07:20:29.983Z"
+  },
+  {
+    "action": "UZMAN_ILISKISI_KESILDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-011: {\"assignee\":null,\"status\":\"YENİ\"}",
+    "id": "AUD-1787296591714",
+    "date": "2026-08-21T07:16:31.714Z"
+  },
+  {
+    "action": "UZMAN_ATANDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-011: {\"assignee\":\"Teknik Uzman (Oturum Açık)\",\"status\":\"İŞLEMDE\"}",
+    "id": "AUD-1787296584371",
+    "date": "2026-08-21T07:16:24.371Z"
+  },
+  {
+    "action": "UZMAN_ILISKISI_KESILDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-011: {\"assignee\":null,\"status\":\"YENİ\"}",
+    "id": "AUD-1787296578694",
+    "date": "2026-08-21T07:16:18.694Z"
+  },
+  {
+    "action": "UZMAN_ATANDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-011: {\"assignee\":\"Teknik Uzman (Oturum Açık)\",\"status\":\"İŞLEMDE\"}",
+    "id": "AUD-1787296575786",
+    "date": "2026-08-21T07:16:15.786Z"
+  },
+  {
+    "action": "UZMAN_ILISKISI_KESILDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-011: {\"assignee\":null,\"status\":\"YENİ\"}",
+    "id": "AUD-1787296569157",
+    "date": "2026-08-21T07:16:09.157Z"
+  },
+  {
+    "action": "TALEP_ISLEME_GERI_ALINDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-011: {\"status\":\"İŞLEMDE\"}",
+    "id": "AUD-1787296564569",
+    "date": "2026-08-21T07:16:04.569Z"
+  },
+  {
+    "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-011: {\"status\":\"ONAY_BEKLİYOR\"}",
+    "id": "AUD-1787296556898",
+    "date": "2026-08-21T07:15:56.898Z"
+  },
+  {
+    "action": "UZMAN_ATANDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-011: {\"assignee\":\"Teknik Uzman (Oturum Açık)\",\"status\":\"İŞLEMDE\"}",
+    "id": "AUD-1787296546280",
+    "date": "2026-08-21T07:15:46.280Z"
+  },
+  {
+    "action": "TALEP_ONAYLANDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-012: {\"status\":\"KAPATILDI\"}",
+    "id": "AUD-1787296544160",
+    "date": "2026-08-21T07:15:44.160Z"
+  },
+  {
+    "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-012: {\"status\":\"ONAY_BEKLİYOR\"}",
+    "id": "AUD-1787296528950",
+    "date": "2026-08-21T07:15:28.950Z"
+  },
+  {
+    "action": "UZMAN_ATANDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-012: {\"assignee\":\"Teknik Uzman (Oturum Açık)\",\"status\":\"İŞLEMDE\"}",
+    "id": "AUD-1787296525056",
+    "date": "2026-08-21T07:15:25.056Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "a",
+    "detail": "TLP-2026-012",
+    "id": "AUD-1787296304279",
+    "date": "2026-08-21T07:11:44.279Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "a",
+    "detail": "TLP-2026-011",
+    "id": "AUD-1787296269446",
+    "date": "2026-08-21T07:11:09.446Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "a",
+    "detail": "TLP-2026-010",
+    "id": "AUD-1787296094478",
+    "date": "2026-08-21T07:08:14.478Z"
+  },
+  {
+    "action": "UZMAN_ILISKISI_KESILDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-009: {\"assignee\":null,\"status\":\"YENİ\"}",
+    "id": "AUD-1787295584657",
+    "date": "2026-08-21T06:59:44.657Z"
+  },
+  {
+    "action": "UZMAN_ATANDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-009: {\"assignee\":\"Teknik Uzman (Oturum Açık)\",\"status\":\"İŞLEMDE\"}",
+    "id": "AUD-1787295583646",
+    "date": "2026-08-21T06:59:43.646Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "a",
+    "detail": "TLP-2026-009",
+    "id": "AUD-1787295397125",
+    "date": "2026-08-21T06:56:37.125Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "s",
+    "detail": "TLP-2026-008",
+    "id": "AUD-1787295184293",
+    "date": "2026-08-21T06:53:04.293Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "a",
+    "detail": "TLP-2026-007",
+    "id": "AUD-1787295111676",
+    "date": "2026-08-21T06:51:51.676Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "adwadwa",
+    "detail": "TLP-2026-006",
+    "id": "AUD-1787295081568",
+    "date": "2026-08-21T06:51:21.568Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "ali",
+    "detail": "TLP-2026-005",
+    "id": "AUD-1787295064030",
+    "date": "2026-08-21T06:51:04.030Z"
+  },
+  {
+    "action": "TALEP_GUNCELLENDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-004: {\"status\":\"KAPATILDI\"}",
+    "id": "AUD-1787291331669",
+    "date": "2026-08-21T05:48:51.669Z"
+  },
+  {
+    "action": "TALEP_GUNCELLENDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-004: {\"status\":\"ONAY_BEKLİYOR\"}",
+    "id": "AUD-1787291066698",
+    "date": "2026-08-21T05:44:26.698Z"
+  },
+  {
+    "action": "TALEP_GUNCELLENDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-004: {\"assignee\":\"Hasan Kurt (Sistem & Veritabanı Yöneticisi)\",\"status\":\"İŞLEMDE\"}",
+    "id": "AUD-1787291059829",
+    "date": "2026-08-21T05:44:19.829Z"
+  },
+  {
+    "action": "TALEP_OLUSTURULDU",
+    "userId": "dawdwad",
+    "detail": "TLP-2026-004",
+    "id": "AUD-1787291031547",
+    "date": "2026-08-21T05:43:51.547Z"
+  },
+  {
+    "action": "TALEP_GUNCELLENDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-002: {\"status\":\"KAPATILDI\"}",
+    "id": "AUD-1787290994815",
+    "date": "2026-08-21T05:43:14.815Z"
+  },
+  {
+    "action": "TALEP_GUNCELLENDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-001: {\"status\":\"KAPATILDI\"}",
+    "id": "AUD-1787290994467",
+    "date": "2026-08-21T05:43:14.467Z"
+  },
+  {
+    "action": "TALEP_GUNCELLENDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-002: {\"status\":\"ONAY_BEKLİYOR\"}",
+    "id": "AUD-1787290972667",
+    "date": "2026-08-21T05:42:52.667Z"
+  },
+  {
+    "action": "TALEP_GUNCELLENDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-002: {\"assignee\":\"Teknik Uzman (Oturum Açık)\",\"status\":\"İŞLEMDE\"}",
+    "id": "AUD-1787290971801",
+    "date": "2026-08-21T05:42:51.801Z"
+  },
+  {
+    "action": "TALEP_GUNCELLENDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-001: {\"status\":\"ONAY_BEKLİYOR\"}",
+    "id": "AUD-1787290968712",
+    "date": "2026-08-21T05:42:48.712Z"
+  },
+  {
+    "action": "TALEP_GUNCELLENDI",
+    "userId": "MOCK_API",
+    "detail": "TLP-2026-003: {\"status\":\"KAPATILDI\"}",
+    "id": "AUD-1787290930974",
+    "date": "2026-08-21T05:42:10.974Z"
+  },
+  {
+    "action": "KULLANICI_KAYDI_AKTIFLESTIRILDI",
+    "userId": "USR-01",
+    "detail": "Kart ID ve telefon OTP doğrulaması tamamlandı.",
+    "id": "AUD-1787230515471",
+    "date": "2026-08-20T12:55:15.471Z"
+  }
+]

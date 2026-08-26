@@ -1,0 +1,122 @@
+[
+  {
+    "employeeId": "USR-01",
+    "cardId": "KRT-847291",
+    "phone": "05320000001",
+    "name": "Ahmet Yilmaz",
+    "department": "Yazilim Grubu",
+    "active": true
+  },
+  {
+    "employeeId": "USR-02",
+    "cardId": "KRT-847292",
+    "phone": "05320000002",
+    "name": "Mehmet Demir",
+    "department": "Ag ve Donanim Servisi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-03",
+    "cardId": "KRT-847293",
+    "phone": "05320000003",
+    "name": "Ali Vural",
+    "department": "Tesis ve Iklimlendirme",
+    "active": true
+  },
+  {
+    "employeeId": "USR-04",
+    "cardId": "KRT-847294",
+    "phone": "05320000004",
+    "name": "Burak Sahin",
+    "department": "Ag ve Donanim Servisi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-05",
+    "cardId": "KRT-847295",
+    "phone": "05320000005",
+    "name": "Derya Arslan",
+    "department": "Ag ve Donanim Servisi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-06",
+    "cardId": "KRT-847296",
+    "phone": "05320000006",
+    "name": "Hasan Kurt",
+    "department": "Sistem ve Yazilim Servisi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-07",
+    "cardId": "KRT-847297",
+    "phone": "05320000007",
+    "name": "Emre Aydin",
+    "department": "Sistem ve Yazilim Servisi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-08",
+    "cardId": "KRT-847298",
+    "phone": "05320000008",
+    "name": "Nihan Celik",
+    "department": "Sistem ve Yazilim Servisi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-09",
+    "cardId": "KRT-847299",
+    "phone": "05320000009",
+    "name": "Gokhan Yildiz",
+    "department": "Tesis ve Iklimlendirme",
+    "active": true
+  },
+  {
+    "employeeId": "USR-10",
+    "cardId": "KRT-847302",
+    "phone": "05320000010",
+    "name": "Elif Karaca",
+    "department": "Tesis ve Iklimlendirme",
+    "active": true
+  },
+  {
+    "employeeId": "USR-11",
+    "cardId": "KRT-847303",
+    "phone": "05320000011",
+    "name": "Selin Koc",
+    "department": "Siber Guvenlik Servisi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-12",
+    "cardId": "KRT-847304",
+    "phone": "05320000012",
+    "name": "Cenk Erdem",
+    "department": "Siber Guvenlik Servisi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-13",
+    "cardId": "KRT-847305",
+    "phone": "05320000013",
+    "name": "Irem Aksoy",
+    "department": "Siber Guvenlik Servisi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-14",
+    "cardId": "KRT-847300",
+    "phone": "05320000014",
+    "name": "Zeynep Kaya",
+    "department": "Surec ve Kalite Masasi",
+    "active": true
+  },
+  {
+    "employeeId": "USR-15",
+    "cardId": "KRT-847301",
+    "phone": "05320000015",
+    "name": "Sistem Yoneticisi",
+    "department": "Bilgi Islem Daire Baskanligi",
+    "active": true
+  }
+]

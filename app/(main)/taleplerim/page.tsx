@@ -1,0 +1,187 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useTickets, Ticket } from '@/layout/context/TicketContext';
+import { useUser } from '@/layout/context/UserContext';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Tag } from 'primereact/tag';
+import { Button } from 'primereact/button';
+import { Dialog } from 'primereact/dialog';
+import { Card } from 'primereact/card';
+import { Timeline } from 'primereact/timeline';
+import { InputText } from 'primereact/inputtext';
+import { Dropdown } from 'primereact/dropdown';
+import { Message } from 'primereact/message';
+
+const TaleplerimPage = () => {
+    const { tickets, confirmTicket, isLoading, loadError } = useTickets();
+    const { currentUser } = useUser();
+    
+    const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+    const [dialogVisible, setDialogVisible] = useState(false);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
+    const normalize = (val: string) => (val ? val.trim().toLocaleLowerCase('tr-TR') : '');
+
+    // KURAL: Rol fark etmeksizin yalnızca aktif kullanıcının açtığı talepler listelenir
+    const myCreatedTickets = tickets.filter((ticket) => {
+        const requester = normalize(ticket.requester);
+        const activeUser = normalize(currentUser.fullName);
+        return requester === activeUser || requester.startsWith(activeUser);
+    });
+
+    const filteredTickets = myCreatedTickets.filter((ticket) => {
+        const query = search.toLocaleLowerCase('tr-TR');
+        return (
+            (!query || `${ticket.id} ${ticket.title} ${ticket.category}`.toLocaleLowerCase('tr-TR').includes(query)) &&
+            (!statusFilter || ticket.status === statusFilter)
+        );
+    });
+
+    // Tip güvenli ve kurumsal renk hiyerarşisine uygun durum rozeti fonksiyonu
+    const getStatusBadge = (status: Ticket['status']) => {
+        switch (status) {
+            case 'YENİ':
+                return <Tag value="YENİ" severity="info" />;
+            case 'İŞLEMDE':
+                return <Tag value="İŞLEMDE" severity="warning" />;
+            case 'ONAY_BEKLİYOR':
+                return <Tag value="ONAY BEKLİYOR" className="bg-purple-600 text-white font-semibold" />;
+            case 'KAPATILDI':
+                return <Tag value="KAPATILDI" severity="success" />;
+            case 'REDDEDİLDİ':
+                return <Tag value="REDDEDİLDİ" severity="danger" />;
+            default:
+                return null;
+        }
+    };
+
+    const actionBodyTemplate = (rowData: Ticket) => {
+        return (
+            <div className="flex gap-2">
+                <Button
+                    icon="pi pi-eye"
+                    rounded
+                    outlined
+                    severity="secondary"
+                    tooltip="Talep Detayı ve Tarihçe"
+                    onClick={() => {
+                        setSelectedTicket(rowData);
+                        setDialogVisible(true);
+                    }}
+                />
+                {rowData.status === 'ONAY_BEKLİYOR' && (
+                    <>
+                        <Button
+                            icon="pi pi-check"
+                            rounded
+                            severity="success"
+                            tooltip="Çözümü Onayla (Kapat)"
+                            onClick={() => confirmTicket(rowData.id, true)}
+                        />
+                        <Button
+                            icon="pi pi-times"
+                            rounded
+                            severity="danger"
+                            tooltip="Sorun Devam Ediyor (İtiraz Et)"
+                            onClick={() => confirmTicket(rowData.id, false)}
+                        />
+                    </>
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <div className="grid">
+            <div className="col-12">
+                <Card 
+                    title="Açtığım Resmi Talepler" 
+                    subTitle={`Sayın ${currentUser.fullName}, sadece sizin tarafınızdan oluşturulan talepler listelenmektedir.`}
+                >
+                    {isLoading && <Message severity="info" className="w-full mb-3" text="Talepler yükleniyor..." />}
+                    {loadError && <Message severity="warn" className="w-full mb-3" text={loadError} />}
+                    
+                    <div className="flex flex-wrap gap-2 mb-3">
+                        <InputText 
+                            value={search} 
+                            onChange={(event) => setSearch(event.target.value)} 
+                            placeholder="Talep ara..." 
+                            className="w-full md:w-20rem"
+                        />
+                        <Dropdown 
+                            value={statusFilter} 
+                            options={['YENİ', 'İŞLEMDE', 'ONAY_BEKLİYOR', 'KAPATILDI', 'REDDEDİLDİ']} 
+                            onChange={(event) => setStatusFilter(event.value)} 
+                            placeholder="Durum Filtresi" 
+                            showClear 
+                        />
+                    </div>
+
+                    <DataTable 
+                        value={filteredTickets} 
+                        paginator 
+                        rows={10} 
+                        responsiveLayout="scroll" 
+                        emptyMessage="Açtığınız herhangi bir aktif talep bulunmamaktadır."
+                    >
+                        <Column field="id" header="Talep No" style={{ width: '120px' }} />
+                        <Column field="title" header="Talep Başlığı" />
+                        <Column field="category" header="Kategori" style={{ width: '150px' }} />
+                        <Column field="priority" header="Aciliyet" style={{ width: '100px' }} />
+                        <Column 
+                            field="status" 
+                            header="Durum" 
+                            style={{ width: '160px' }} 
+                            body={(rowData: Ticket) => getStatusBadge(rowData.status)} 
+                        />
+                        <Column field="assignee" header="Atanan Uzman" body={(r: Ticket) => r.assignee || 'Henüz Atanmadı'} />
+                        <Column field="createdAt" header="Tarih" style={{ width: '150px' }} />
+                        <Column header="İşlem & Akış" body={actionBodyTemplate} style={{ width: '140px' }} />
+                    </DataTable>
+                </Card>
+            </div>
+
+            {/* Talep Detay ve Süreç Tarihçesi Modalı */}
+            <Dialog 
+                header={`Talep Detayı - ${selectedTicket?.id}`} 
+                visible={dialogVisible} 
+                style={{ width: '600px' }} 
+                onHide={() => setDialogVisible(false)}
+            >
+                {selectedTicket && (
+                    <div className="flex flex-column gap-4">
+                        <div className="surface-ground p-3 border-round">
+                            <div className="flex justify-content-between align-items-center mb-2">
+                                <span className="font-bold text-lg">{selectedTicket.title}</span>
+                                <div className="flex gap-2 align-items-center">
+                                    <Tag value={selectedTicket.priority} severity={selectedTicket.priority === 'Kritik' ? 'danger' : 'info'} />
+                                    {getStatusBadge(selectedTicket.status)}
+                                </div>
+                            </div>
+                            <p className="m-0 text-700 font-sans text-sm">{selectedTicket.description}</p>
+                        </div>
+
+                        <div>
+                            <h6 className="font-bold mb-3">Süreç Tarihçesi & Denetim İzi</h6>
+                            <Timeline 
+                                value={selectedTicket.history} 
+                                opposite={(item) => <small className="text-500">{item.date}</small>} 
+                                content={(item) => (
+                                    <div className="mb-2">
+                                        <div className="font-bold text-sm">{item.action}</div>
+                                        <small className="text-500">İşlem Yapan: {item.user}</small>
+                                    </div>
+                                )} 
+                            />
+                        </div>
+                    </div>
+                )}
+            </Dialog>
+        </div>
+    );
+};
+
+export default TaleplerimPage;

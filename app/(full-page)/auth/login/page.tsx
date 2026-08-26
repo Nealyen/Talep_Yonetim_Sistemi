@@ -2,20 +2,56 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import React, { useContext, useState } from 'react';
-import { Checkbox } from 'primereact/checkbox';
 import { Button } from 'primereact/button';
-import { Password } from 'primereact/password';
 import { LayoutContext } from '../../../../layout/context/layoutcontext';
 import { InputText } from 'primereact/inputtext';
 import { classNames } from 'primereact/utils';
+import { Message } from 'primereact/message';
 
 const LoginPage = () => {
-    const [password, setPassword] = useState('');
-    const [checked, setChecked] = useState(false);
+    const [mode, setMode] = useState<'login' | 'register'>('login');
+    const [cardId, setCardId] = useState('');
+    const [phone, setPhone] = useState('');
+    const [otp, setOtp] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+    const [demoCode, setDemoCode] = useState('');
+    const [message, setMessage] = useState<{ severity: 'success' | 'error' | 'info'; text: string } | null>(null);
+    const [loading, setLoading] = useState(false);
     const { layoutConfig } = useContext(LayoutContext);
 
     const router = useRouter();
     const containerClassName = classNames('surface-ground flex align-items-center justify-content-center min-h-screen min-w-screen overflow-hidden', { 'p-input-filled': layoutConfig.inputStyle === 'filled' });
+
+    const submitAuth = async (action: 'request-otp' | 'login' | 'register') => {
+        setLoading(true);
+        setMessage(null);
+        try {
+            const response = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, cardId, phone, otp })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                setMessage({ severity: 'error', text: data.error || 'İşlem tamamlanamadı.' });
+                return;
+            }
+            if (action === 'request-otp') {
+                setOtpSent(true);
+                setDemoCode(data.demoCode || '');
+                setMessage({ severity: 'info', text: `Demo OTP gönderildi: ${data.demoCode}` });
+                return;
+            }
+            localStorage.setItem('authUser', JSON.stringify(data.user));
+            localStorage.setItem('activeRole', data.user.role);
+            setMessage({ severity: 'success', text: data.message });
+            setTimeout(() => router.push('/'), 500);
+        } catch {
+            setMessage({ severity: 'error', text: 'Sunucuya bağlanılamadı.' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className={containerClassName}>
@@ -31,31 +67,41 @@ const LoginPage = () => {
                     <div className="w-full surface-card py-8 px-5 sm:px-8" style={{ borderRadius: '53px' }}>
                         <div className="text-center mb-5">
                             <img src="/demo/images/login/avatar.png" alt="Image" height="50" className="mb-3" />
-                            <div className="text-900 text-3xl font-medium mb-3">Welcome, Isabel!</div>
-                            <span className="text-600 font-medium">Sign in to continue</span>
+                            <div className="text-900 text-3xl font-medium mb-3">Kurumsal Talep Portalı</div>
+                            <span className="text-600 font-medium">Kart ID ve telefon ile güvenli erişim</span>
                         </div>
 
                         <div>
-                            <label htmlFor="email1" className="block text-900 text-xl font-medium mb-2">
-                                Email
-                            </label>
-                            <InputText id="email1" type="text" placeholder="Email address" className="w-full md:w-30rem mb-5" style={{ padding: '1rem' }} />
-
-                            <label htmlFor="password1" className="block text-900 font-medium text-xl mb-2">
-                                Password
-                            </label>
-                            <Password inputId="password1" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" toggleMask className="w-full mb-5" inputClassName="w-full p-3 md:w-30rem"></Password>
-
-                            <div className="flex align-items-center justify-content-between mb-5 gap-5">
-                                <div className="flex align-items-center">
-                                    <Checkbox inputId="rememberme1" checked={checked} onChange={(e) => setChecked(e.checked ?? false)} className="mr-2"></Checkbox>
-                                    <label htmlFor="rememberme1">Remember me</label>
-                                </div>
-                                <a className="font-medium no-underline ml-2 text-right cursor-pointer" style={{ color: 'var(--primary-color)' }}>
-                                    Forgot password?
-                                </a>
+                            <div className="flex gap-2 mb-4">
+                                <Button label="Giriş Yap" outlined={mode !== 'login'} severity="info" onClick={() => { setMode('login'); setOtpSent(false); setMessage(null); }} className="flex-1" />
+                                <Button label="Kayıt Ol" outlined={mode !== 'register'} severity="success" onClick={() => { setMode('register'); setOtpSent(false); setMessage(null); }} className="flex-1" />
                             </div>
-                            <Button label="Sign In" className="w-full p-3 text-xl" onClick={() => router.push('/')}></Button>
+                            <label htmlFor="cardId" className="block text-900 text-xl font-medium mb-2">
+                                Personel Kart ID
+                            </label>
+                            <InputText id="cardId" value={cardId} onChange={(event) => setCardId(event.target.value)} placeholder="Örn: KRT-847291" className="w-full mb-4" style={{ padding: '1rem' }} />
+
+                            <label htmlFor="phone" className="block text-900 font-medium text-xl mb-2">
+                                Cep Telefonu
+                            </label>
+                            <InputText id="phone" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="05XXXXXXXXX" className="w-full mb-4" style={{ padding: '1rem' }} />
+
+                            {otpSent && (
+                                <>
+                                    <label htmlFor="otp" className="block text-900 font-medium text-xl mb-2">SMS Doğrulama Kodu</label>
+                                    <InputText id="otp" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="6 haneli kod" className="w-full mb-3" style={{ padding: '1rem' }} />
+                                    <small className="block text-600 mb-4">Prototip kodu: {demoCode}</small>
+                                </>
+                            )}
+                            {message && <Message severity={message.severity} text={message.text} className="w-full mb-4" />}
+                            {!otpSent ? (
+                                <Button label="SMS Kodu Gönder" icon="pi pi-mobile" className="w-full p-3 text-xl" loading={loading} onClick={() => submitAuth('request-otp')} />
+                            ) : (
+                                <Button label={mode === 'register' ? 'Kaydı Tamamla' : 'Giriş Yap'} icon="pi pi-check" className="w-full p-3 text-xl" loading={loading} onClick={() => submitAuth(mode)} />
+                            )}
+                            <div className="text-center mt-4 text-600 text-sm">
+                                Kart ID kurum personel kaydında bulunmalı ve telefon numarası eşleşmelidir.
+                            </div>
                         </div>
                     </div>
                 </div>
