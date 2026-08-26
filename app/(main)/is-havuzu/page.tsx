@@ -23,8 +23,7 @@ const IsHavuzuPage = () => {
 
     const isTechnician = currentUser.role === 'TEKNISYEN' || currentUser.role === 'ADMIN';
 
-    // KURAL: Havuzda yalnızca henüz kimseye atanmamış (boşta) ve 'YENİ' durumundaki açık talepler listelenir.
-    // Başka bir teknisyenin üzerine aldığı işler doğrudan bu listeden elenir.
+    // KURAL: Havuzda yalnızca henüz kimseye atanmamış (boşta) ve 'YENİ' durumundaki açık talepler listelenir
     const unassignedTickets = tickets.filter((ticket) => 
         !ticket.assignee && ticket.status === 'YENİ'
     );
@@ -39,13 +38,21 @@ const IsHavuzuPage = () => {
             return <span className="text-500 text-sm">Salt Okunur</span>;
         }
 
+        // Görevler Ayrılığı Kontrolü: Talep sahibi ile aktif teknisyen aynı kişi mi?
+        const isMyOwnTicket = rowData.requester.trim().toLocaleLowerCase('tr-TR') === currentUser.fullName.trim().toLocaleLowerCase('tr-TR');
+
         return (
             <Button
-                label="İşi Üzerime Al" 
-                icon="pi pi-plus" 
+                label={isMyOwnTicket ? "Kendi Talebiniz" : "İşi Üzerime Al"} 
+                icon={isMyOwnTicket ? "pi pi-ban" : "pi pi-plus"} 
                 size="small" 
-                severity="info"
+                severity={isMyOwnTicket ? "secondary" : "info"}
+                disabled={isMyOwnTicket}
+                tooltip={isMyOwnTicket ? "Kendi oluşturduğunuz talebi doğrudan üzerinize alamazsınız." : "Talebi üzerinize atayın"}
+                tooltipOptions={{ position: 'left' }}
                 onClick={async () => {
+                    if (isMyOwnTicket) return;
+
                     const assigned = await assignTicket(rowData.id, currentUser.fullName);
                     if (assigned) {
                         toast.current?.show({ 

@@ -35,3 +35,18 @@
     margin-top: 4px !important;
     transform-origin: top center !important;
 }
+
+/* Sayfalama (Paginator) Aktif Sayfa Numarası Kontrast Düzeltmesi */
+.p-paginator .p-paginator-pages .p-paginator-page {
+    &.p-highlight {
+        background-color: var(--primary-color) !important;
+        color: var(--primary-color-text, #ffffff) !important;
+        font-weight: 700 !important;
+        border-color: var(--primary-color) !important;
+    }
+
+    &:not(.p-highlight):hover {
+        background: var(--surface-hover) !important;
+        color: var(--text-color) !important;
+    }
+}
