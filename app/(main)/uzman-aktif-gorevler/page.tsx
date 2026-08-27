@@ -42,10 +42,12 @@ const UzmanAktifGorevlerPage = () => {
         );
     });
 
-    const getStatusSeverity = (status: Ticket['status']) => {
+    const getStatusSeverity = (status: Ticket['status']): "info" | "success" | "warning" | "danger" | null => {
         switch (status) {
+            case 'YENİ': return 'info';
             case 'İŞLEMDE': return 'warning';
-            case 'ONAY_BEKLİYOR': return 'info';
+            case 'ONAY_BEKLİYOR': return null; 
+            case 'KAPATILDI': return 'success';
             case 'REDDEDİLDİ': return 'danger';
             default: return null;
         }
@@ -152,11 +154,17 @@ const UzmanAktifGorevlerPage = () => {
                             <Column field="priority" header="Öncelik" style={{ width: '100px' }} />
                             <Column field="requester" header="Talep Sahibi" style={{ width: '180px' }} />
                             <Column 
-                                field="status" 
-                                header="Durum" 
-                                style={{ width: '140px' }} 
-                                body={(rowData: Ticket) => <Tag value={rowData.status} severity={getStatusSeverity(rowData.status)} />} 
-                            />
+    field="status" 
+    header="Durum" 
+    style={{ width: '140px' }} 
+    body={(rowData: Ticket) => (
+        <Tag 
+            value={rowData.status} 
+            severity={getStatusSeverity(rowData.status)} 
+            className={rowData.status === 'ONAY_BEKLİYOR' ? "bg-purple-600 text-white" : ""}
+        />
+    )} 
+/>
                             <Column field="createdAt" header="Oluşturulma" style={{ width: '150px' }} />
                             <Column header="İşlemler" body={actionBodyTemplate} style={{ width: '120px' }} />
                         </DataTable>

@@ -17,19 +17,17 @@ const AppMenu = () => {
             items: [{ label: 'Gösterge Paneli', icon: 'pi pi-fw pi-home', to: '/' }]
         };
 
-        // Herkese açık olan zorunlu menüler (Tüm roller görebilir)
         const talepItems: AppMenuItem[] = [
             { label: 'Yeni Talep Oluştur', icon: 'pi pi-fw pi-plus-circle', to: '/yeni-talep' },
             { label: 'Taleplerim', icon: 'pi pi-fw pi-list', to: '/taleplerim' }
         ];
 
-        // Yönetici ve Koordinatör için "Tüm Talepler" görünümü
         if (activeRole === 'ADMIN' || activeRole === 'KOORDINATOR') {
             talepItems.push({ label: 'Tüm Talepler', icon: 'pi pi-fw pi-table', to: '/tum-talepler' });
         }
 
-        // Teknisyen ve Yönetici için: Aktif Görevler ve Genel İş Havuzu ayrımı
-        if (activeRole === 'TEKNISYEN' || activeRole === 'ADMIN') {
+        // KURAL: Koordinatör, Teknisyen ve Admin yetkilerine sahip olarak kabul edildi
+        if (activeRole === 'TEKNISYEN' || activeRole === 'KOORDINATOR' || activeRole === 'ADMIN') {
             talepItems.push({ 
                 label: 'Aktif Görevlerim', 
                 icon: 'pi pi-fw pi-briefcase', 
@@ -42,7 +40,6 @@ const AppMenu = () => {
             });
         }
         
-        // Koordinatör ve Yönetici için Süreç Takibi
         if (activeRole === 'KOORDINATOR' || activeRole === 'ADMIN') {
             talepItems.push({ 
                 label: activeRole === 'ADMIN' ? 'Sistem Süreç Takibi' : 'Süreç Takip / Koordinatör', 
@@ -53,7 +50,6 @@ const AppMenu = () => {
 
         const kurumsalItems: AppMenuItem[] = [];
         
-        // Yalnızca Yöneticilere açık olan menüler
         if (activeRole === 'ADMIN') {
             kurumsalItems.push({ label: 'Kullanıcı & Rol Yönetimi', icon: 'pi pi-fw pi-users', to: '/kullanicilar' });
             kurumsalItems.push({ label: 'Denetim İzi (Audit Log)', icon: 'pi pi-fw pi-history', to: '/denetim-izi' });

@@ -3,142 +3,155 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'CALISAN' | 'TEKNISYEN' | 'KOORDINATOR' | 'ADMIN';
-export type TechnicianExpertise = 'Donanım' | 'Yazılım' | null;
+export type SpecialtyType = 'Donanım' | 'Yazılım' | 'Ağ / Altyapı' | 'Genel';
 
-export interface UserProfile {
+export interface AppUser {
     id: string;
     fullName: string;
-    sicilNo: string;
-    title: string;
-    email: string;
-    dahili: string;
     role: UserRole;
-    roleLabel: string;
-    expertise?: TechnicianExpertise;
+    email: string;
+    sicilNo: string;
+    dahili: string;
+    specialty?: SpecialtyType;
+    department?: string;
 }
 
-const DEFAULT_USERS: UserProfile[] = [
-    {
-        id: 'usr-default',
-        fullName: 'deneme1',
-        sicilNo: '1923',
-        title: 'deneme1',
-        email: 'deneme@gmail.com',
-        dahili: '1907',
-        role: 'ADMIN',
-        roleLabel: 'Admin (Yönetici)'
-    }
-];
+interface ValidationResult {
+    success: boolean;
+    error?: string;
+}
 
 interface UserContextType {
-    users: UserProfile[];
-    currentUser: UserProfile;
-    switchUser: (id: string) => void;
-    addUser: (userData: Omit<UserProfile, 'id' | 'roleLabel'>) => void;
-    updateUser: (id: string, updates: Partial<UserProfile>) => void;
-    resetSystem: () => void;
+    currentUser: AppUser;
+    setCurrentUser: (user: AppUser) => void;
+    users: AppUser[];
+    addUser: (user: Omit<AppUser, 'id'>) => ValidationResult;
+    updateUser: (id: string, updatedFields: Partial<AppUser>) => ValidationResult;
+    deleteUser: (id: string) => boolean;
+    resetUsers: () => void;
 }
+
+const DEFAULT_USERS: AppUser[] = [
+    {
+        id: '0001',
+        fullName: 'admin1',
+        role: 'ADMIN',
+        email: 'admin@kurum.local',
+        sicilNo: '0000',
+        dahili: '0000',
+        department: 'Bilgi İşlem Daire Bşk.'
+    }
+];
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-    const [users, setUsers] = useState<UserProfile[]>(DEFAULT_USERS);
-    const [currentUser, setCurrentUser] = useState<UserProfile>(DEFAULT_USERS[0]);
+    const [users, setUsers] = useState<AppUser[]>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('app_users');
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch {
+                    return DEFAULT_USERS;
+                }
+            }
+        }
+        return DEFAULT_USERS;
+    });
+
+    const [currentUser, setCurrentUser] = useState<AppUser>(() => users[0] || DEFAULT_USERS[0]);
 
     useEffect(() => {
-        try {
-            const savedUsers = localStorage.getItem('system_users');
-            const activeUserId = localStorage.getItem('active_user_id');
+        localStorage.setItem('app_users', JSON.stringify(users));
+    }, [users]);
 
-            let currentUsersList = DEFAULT_USERS;
-            if (savedUsers) {
-                currentUsersList = JSON.parse(savedUsers);
-                setUsers(currentUsersList);
-            } else {
-                localStorage.setItem('system_users', JSON.stringify(DEFAULT_USERS));
-            }
+    // TEKİLLİK DOĞRULAMA MOTORU (UNIQUE CONSTRAINT ENGINE)
+    const validateUniqueConstraints = (data: { email: string; sicilNo: string; dahili: string }, excludeUserId?: string): ValidationResult => {
+        const targetEmail = data.email.trim().toLowerCase();
+        const targetSicil = data.sicilNo.trim().toUpperCase();
+        const targetDahili = data.dahili.trim();
 
-            if (activeUserId) {
-                const found = currentUsersList.find((u: UserProfile) => u.id === activeUserId);
-                if (found) {
-                    setCurrentUser(found);
-                } else {
-                    setCurrentUser(currentUsersList[0]);
-                    localStorage.setItem('active_user_id', currentUsersList[0].id);
-                }
-            } else {
-                localStorage.setItem('active_user_id', currentUsersList[0].id);
-            }
-        } catch (e) {
-            console.error('LocalStorage okuma hatası:', e);
+        const otherUsers = excludeUserId ? users.filter(u => u.id !== excludeUserId) : users;
+
+        if (otherUsers.some(u => u.email.trim().toLowerCase() === targetEmail)) {
+            return { success: false, error: `HATA: [${data.email}] e-posta adresi başka bir kullanıcıya kayıtlıdır.` };
         }
-    }, []);
 
-    const switchUser = (id: string) => {
-        const target = users.find(u => u.id === id);
-        if (target) {
-            setCurrentUser(target);
-            localStorage.setItem('active_user_id', target.id);
-            window.location.reload();
+        if (otherUsers.some(u => u.sicilNo.trim().toUpperCase() === targetSicil)) {
+            return { success: false, error: `HATA: [${data.sicilNo}] Sicil Numarası başka bir kullanıcıya aittir.` };
         }
+
+        if (otherUsers.some(u => u.dahili.trim() === targetDahili)) {
+            return { success: false, error: `HATA: [${data.dahili}] Dahili Hat numarası sistemde zaten kullanımda.` };
+        }
+
+        return { success: true };
     };
 
-    const getRoleLabel = (role: UserRole) => {
-        const roleLabels: Record<UserRole, string> = {
-            CALISAN: 'Çalışan (Talep Sahibi)',
-            TEKNISYEN: 'Teknisyen (Destek)',
-            KOORDINATOR: 'Koordinatör',
-            ADMIN: 'Admin (Yönetici)'
-        };
-        return roleLabels[role];
-    };
+    // KULLANICI EKLEME
+    const addUser = (userData: Omit<AppUser, 'id'>): ValidationResult => {
+        const validation = validateUniqueConstraints(userData);
+        if (!validation.success) {
+            return validation;
+        }
 
-    const addUser = (userData: Omit<UserProfile, 'id' | 'roleLabel'>) => {
-        const newUser: UserProfile = {
+        const newUser: AppUser = {
             ...userData,
-            id: `usr-${Date.now()}`,
-            roleLabel: getRoleLabel(userData.role),
-            expertise: userData.role === 'TEKNISYEN' ? userData.expertise : undefined
+            id: `usr-${Date.now().toString().slice(-4)}`,
+            email: userData.email.trim().toLowerCase(),
+            sicilNo: userData.sicilNo.trim().toUpperCase(),
+            dahili: userData.dahili.trim()
         };
 
-        const updatedUsers = [...users, newUser];
-        setUsers(updatedUsers);
-        localStorage.setItem('system_users', JSON.stringify(updatedUsers));
-        
-        setCurrentUser(newUser);
-        localStorage.setItem('active_user_id', newUser.id);
+        setUsers(prev => [...prev, newUser]);
+        return { success: true };
     };
 
-    const updateUser = (id: string, updates: Partial<UserProfile>) => {
-        const updatedUsers = users.map(u => {
-            if (u.id === id) {
-                const newRole = updates.role || u.role;
-                return {
-                    ...u,
-                    ...updates,
-                    roleLabel: getRoleLabel(newRole),
-                    // Eğer rol teknisyenlikten çıkarılırsa uzmanlığı temizle
-                    expertise: newRole === 'TEKNISYEN' ? (updates.expertise !== undefined ? updates.expertise : u.expertise) : undefined
-                };
-            }
-            return u;
-        });
-        setUsers(updatedUsers);
-        localStorage.setItem('system_users', JSON.stringify(updatedUsers));
-        
-        if (currentUser.id === id) {
-            const updatedActiveUser = updatedUsers.find(u => u.id === id);
-            if (updatedActiveUser) setCurrentUser(updatedActiveUser);
+    // KULLANICI GÜNCELLEME
+    const updateUser = (id: string, updatedFields: Partial<AppUser>): ValidationResult => {
+        const target = users.find(u => u.id === id);
+        if (!target) return { success: false, error: 'Kullanıcı bulunamadı.' };
+
+        const checkData = {
+            email: updatedFields.email ?? target.email,
+            sicilNo: updatedFields.sicilNo ?? target.sicilNo,
+            dahili: updatedFields.dahili ?? target.dahili
+        };
+
+        const validation = validateUniqueConstraints(checkData, id);
+        if (!validation.success) {
+            return validation;
         }
+
+        setUsers(prev => prev.map(u => (u.id === id ? { ...u, ...updatedFields } : u)));
+
+        if (currentUser.id === id) {
+            setCurrentUser(prev => ({ ...prev, ...updatedFields }));
+        }
+
+        return { success: true };
     };
 
-    const resetSystem = () => {
-        localStorage.clear();
-        window.location.href = '/'; 
+    // KULLANICI SİLME
+    const deleteUser = (id: string): boolean => {
+        if (users.length <= 1) return false; // Son kalan kullanıcı silinemez
+        setUsers(prev => prev.filter(u => u.id !== id));
+        if (currentUser.id === id) {
+            setCurrentUser(users.find(u => u.id !== id) || DEFAULT_USERS[0]);
+        }
+        return true;
+    };
+
+    // FABRİKA AYARLARINA SIFIRLA
+    const resetUsers = () => {
+        localStorage.removeItem('app_users');
+        setUsers(DEFAULT_USERS);
+        setCurrentUser(DEFAULT_USERS[0]);
     };
 
     return (
-        <UserContext.Provider value={{ users, currentUser, switchUser, addUser, updateUser, resetSystem }}>
+        <UserContext.Provider value={{ currentUser, setCurrentUser, users, addUser, updateUser, deleteUser, resetUsers }}>
             {children}
         </UserContext.Provider>
     );
@@ -146,6 +159,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useUser = () => {
     const context = useContext(UserContext);
-    if (!context) throw new Error('useUser must be used within a UserProvider');
+    if (!context) {
+        throw new Error('useUser must be used within a UserProvider');
+    }
     return context;
 };
