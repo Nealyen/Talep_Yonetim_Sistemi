@@ -16,7 +16,7 @@ import { RoleRouteGuard } from '@/layout/RoleRouteGuard';
 
 const KoordinatorPage = () => {
     const { tickets, assignTicket, unassignTicket, isLoading, loadError } = useTickets();
-    const { users } = useUser(); 
+    const { users, currentUser } = useUser(); 
     
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
     const [selectedTech, setSelectedTech] = useState<string>('');
@@ -24,30 +24,14 @@ const KoordinatorPage = () => {
     const [search, setSearch] = useState('');
     const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
-    const getTechnicianKey = (technicianName: string) => technicianName.split(' (')[0].trim();
-    
-    const busyTechnicianKeys = new Set(
-        tickets
-            .filter((ticket) => ticket.assignee && !['KAPATILDI', 'REDDEDİLDİ'].includes(ticket.status))
-            .filter((ticket) => ticket.id !== selectedTicket?.id)
-            .map((ticket) => getTechnicianKey(ticket.assignee as string))
-    );
-
-    const availableTechnicians = users.filter((technician) => {
-        const technicianKey = getTechnicianKey(technician.fullName);
+    // DÜZELTME: Sadece TEKNISYEN değil; ADMIN ve KOORDINATOR de listeye dahil edildi. 
+    // DÜZELTME: İş atamalarını kilitleyen katı 'busyTechnicianKeys' filtresi kaldırıldı.
+    const availableTechnicians = users.filter((u) => {
+        const isValidRole = ['TEKNISYEN', 'ADMIN', 'KOORDINATOR'].includes(u.role);
+        const isNotRequester = selectedTicket ? u.fullName !== selectedTicket.requester : true;
+        const isNotCurrentAssignee = selectedTicket ? u.fullName !== selectedTicket.assignee : true;
         
-        let isExpertMatch = true;
-        // HATA DÜZELTİLDİ: 'expertise' yerine 'specialty' kullanıldı
-        if (selectedTicket && technician.specialty) {
-            isExpertMatch = selectedTicket.category.includes(technician.specialty);
-        }
-
-        return (
-            technician.role === 'TEKNISYEN' &&
-            isExpertMatch &&
-            technicianKey !== (selectedTicket?.assignee ? getTechnicianKey(selectedTicket.assignee) : null) &&
-            !busyTechnicianKeys.has(technicianKey)
-        );
+        return isValidRole && isNotRequester && isNotCurrentAssignee;
     });
 
     const filteredTickets = tickets.filter((ticket) => ticket.status !== 'KAPATILDI' && (!search || `${ticket.id} ${ticket.title} ${ticket.requester}`.toLocaleLowerCase('tr-TR').includes(search.toLocaleLowerCase('tr-TR'))) && (!categoryFilter || ticket.category === categoryFilter));
@@ -55,19 +39,19 @@ const KoordinatorPage = () => {
     const handleManualAssign = async () => {
         if (!selectedTicket || !selectedTech) return;
 
-        // ADIM 3: GÖREVLER AYRILIĞI (SoD) DENETİM MOTORU
         const isSoDViolation = selectedTicket.requester === selectedTech;
 
         if (isSoDViolation) {
             confirmDialog({
-                message: `DiKKAT: [${selectedTech}] bu talebin bizzat sahibidir. Görevler Ayrılığı (Segregation of Duties) ilkesi gereği bir personel kendi açtığı talebi teknik olarak üstlenemez. Yine de bu atamayı zorlamak istiyor musunuz?`,
+                message: `DİKKAT: [${selectedTech}] bu talebin bizzat sahibidir. Görevler Ayrılığı (SoD) ilkesi gereği bir personel kendi açtığı talebi teknik olarak üstlenemez. Yine de zorlamak istiyor musunuz?`,
                 header: 'SoD İhlali Uyarısı',
                 icon: 'pi pi-exclamation-triangle',
                 acceptClassName: 'p-button-danger',
                 acceptLabel: 'Riski Kabul Et ve Ata',
                 rejectLabel: 'İptal',
                 accept: async () => {
-                    if (await assignTicket(selectedTicket.id, selectedTech)) {
+                    // Two-Way Handshake için atayan kişinin (currentUser) adını gönderiyoruz
+                    if (await assignTicket(selectedTicket.id, selectedTech, currentUser.fullName)) {
                         setAssignDialog(false);
                         setSelectedTech('');
                     }
@@ -76,8 +60,8 @@ const KoordinatorPage = () => {
             return;
         }
 
-        // SoD İhlali yoksa normal atama yap
-        if (await assignTicket(selectedTicket.id, selectedTech)) {
+        // Two-Way Handshake için atayan kişinin (currentUser) adını gönderiyoruz
+        if (await assignTicket(selectedTicket.id, selectedTech, currentUser.fullName)) {
             setAssignDialog(false);
             setSelectedTech('');
         }
@@ -86,7 +70,6 @@ const KoordinatorPage = () => {
     return (
         <RoleRouteGuard allowedRoles={['KOORDINATOR', 'ADMIN']}>
             <div className="grid">
-                {/* ConfirmDialog Bileşeni Ekrana Render Ediliyor */}
                 <ConfirmDialog />
                 
                 <div className="col-12">
@@ -103,13 +86,16 @@ const KoordinatorPage = () => {
                             <Column field="category" header="Kategori" style={{ width: '140px' }} />
                             <Column field="priority" header="Öncelik" style={{ width: '100px' }} />
                             <Column field="requester" header="Talep Sahibi" />
-                            <Column field="assignee" header="Görevli Uzman" body={(r: Ticket) => r.assignee || <span className="text-red-500 font-bold">ATANMADI</span>} />
+                            <Column field="assignee" header="Görevli Uzman" body={(r: Ticket) => {
+                                if (r.status === 'ATAMA_BEKLİYOR') return <span className="text-orange-500 font-bold">{r.pendingAssignee} (Onay Bekliyor)</span>;
+                                return r.assignee || <span className="text-red-500 font-bold">ATANMADI</span>;
+                            }} />
                             <Column
                                 header="Koordinasyon"
                                 body={(rowData: Ticket) => (
                                     <div className="flex gap-2">
                                         <Button
-                                            label={rowData.assignee ? 'Uzman Değiştir' : 'Uzman Ata'}
+                                            label={rowData.assignee || rowData.pendingAssignee ? 'Uzmanı Değiştir' : 'Uzman Ata'}
                                             icon="pi pi-user-edit"
                                             size="small"
                                             severity="help"
@@ -120,7 +106,7 @@ const KoordinatorPage = () => {
                                             }}
                                             disabled={['KAPATILDI', 'REDDEDİLDİ'].includes(rowData.status)}
                                         />
-                                        {rowData.assignee && !['KAPATILDI', 'REDDEDİLDİ'].includes(rowData.status) && (
+                                        {(rowData.assignee || rowData.pendingAssignee) && !['KAPATILDI', 'REDDEDİLDİ'].includes(rowData.status) && (
                                             <Button
                                                 label="İlişkiyi Kes"
                                                 icon="pi pi-user-minus"
@@ -162,7 +148,7 @@ const KoordinatorPage = () => {
                         />
                         <div className="flex justify-content-end gap-2">
                             <Button label="İptal" severity="secondary" onClick={() => setAssignDialog(false)} />
-                            <Button label="Uzmanı Kaydet" severity="info" onClick={handleManualAssign} disabled={!selectedTech} />
+                            <Button label="Uzmanı Kaydet (Gönder)" severity="info" icon="pi pi-send" onClick={handleManualAssign} disabled={!selectedTech} />
                         </div>
                     </div>
                 </Dialog>

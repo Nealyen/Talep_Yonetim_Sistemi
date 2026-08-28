@@ -5,11 +5,18 @@ import React from 'react';
 import AppMenuitem from './AppMenuitem';
 import { MenuProvider } from './context/menucontext';
 import { useUser } from '@/layout/context/UserContext';
+import { useTickets } from '@/layout/context/TicketContext';
 import { AppMenuItem } from '@/types';
 
 const AppMenu = () => {
     const { currentUser } = useUser();
+    const { tickets } = useTickets();
     const activeRole = currentUser.role;
+
+    // YENİ: Aktif kullanıcının onayını bekleyen (ATAMA_BEKLİYOR) görevlerin sayısı
+    const pendingAssignmentsCount = tickets.filter(
+        (ticket) => ticket.pendingAssignee === currentUser.fullName && ticket.status === 'ATAMA_BEKLİYOR'
+    ).length;
 
     const getFilteredMenu = (): AppMenuItem[] => {
         const genelSection: AppMenuItem = {
@@ -26,12 +33,13 @@ const AppMenu = () => {
             talepItems.push({ label: 'Tüm Talepler', icon: 'pi pi-fw pi-table', to: '/tum-talepler' });
         }
 
-        // KURAL: Koordinatör, Teknisyen ve Admin yetkilerine sahip olarak kabul edildi
         if (activeRole === 'TEKNISYEN' || activeRole === 'KOORDINATOR' || activeRole === 'ADMIN') {
             talepItems.push({ 
                 label: 'Aktif Görevlerim', 
                 icon: 'pi pi-fw pi-briefcase', 
-                to: '/uzman-aktif-gorevler' 
+                to: '/uzman-aktif-gorevler',
+                // Bildirim Rozeti (Eğer bekleyen görev varsa sayıyı gönder, yoksa undefined kalsın)
+                badge: pendingAssignmentsCount > 0 ? pendingAssignmentsCount.toString() : undefined
             });
             talepItems.push({ 
                 label: 'Teknik İş Havuzu', 

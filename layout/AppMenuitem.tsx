@@ -29,18 +29,15 @@ const AppMenuitem = (props: AppMenuItemProps) => {
     }, [pathname, searchParams]);
 
     const itemClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-        //avoid processing disabled items
         if (item!.disabled) {
             event.preventDefault();
             return;
         }
 
-        //execute command
         if (item!.command) {
             item!.command({ originalEvent: event, item: item });
         }
 
-        // toggle active state
         if (item!.items) setActiveMenu(active ? (props.parentKey as string) : key);
         else setActiveMenu(key);
     };
@@ -62,7 +59,15 @@ const AppMenuitem = (props: AppMenuItemProps) => {
                 <a href={item!.url} onClick={(e) => itemClick(e)} className={classNames(item!.class, 'p-ripple')} target={item!.target} tabIndex={0}>
                     <i className={classNames('layout-menuitem-icon', item!.icon)}></i>
                     <span className="layout-menuitem-text">{item!.label}</span>
-                    {item!.items && <i className="pi pi-fw pi-angle-down layout-submenu-toggler"></i>}
+                    
+                    {/* YENİ: DİNAMİK TEMA RENGİNDE BİLDİRİM ROZETİ */}
+                    {item!.badge && (
+                        <span className="ml-auto bg-primary text-primary-contrast border-circle flex align-items-center justify-content-center text-xs font-bold" style={{ width: '22px', height: '22px' }}>
+                            {item!.badge}
+                        </span>
+                    )}
+
+                    {item!.items && <i className="pi pi-fw pi-angle-down layout-submenu-toggler ml-auto"></i>}
                     <Ripple />
                 </a>
             ) : null}
@@ -71,7 +76,15 @@ const AppMenuitem = (props: AppMenuItemProps) => {
                 <Link href={item!.to} replace={item!.replaceUrl} target={item!.target} onClick={(e) => itemClick(e)} className={classNames(item!.class, 'p-ripple', { 'active-route': isActiveRoute })} tabIndex={0}>
                     <i className={classNames('layout-menuitem-icon', item!.icon)}></i>
                     <span className="layout-menuitem-text">{item!.label}</span>
-                    {item!.items && <i className="pi pi-fw pi-angle-down layout-submenu-toggler"></i>}
+
+                    {/* YENİ: DİNAMİK TEMA RENGİNDE BİLDİRİM ROZETİ */}
+                    {item!.badge && (
+                        <span className="ml-auto bg-primary text-primary-contrast border-circle flex align-items-center justify-content-center text-xs font-bold" style={{ width: '22px', height: '22px' }}>
+                            {item!.badge}
+                        </span>
+                    )}
+
+                    {item!.items && <i className="pi pi-fw pi-angle-down layout-submenu-toggler ml-auto"></i>}
                     <Ripple />
                 </Link>
             ) : null}

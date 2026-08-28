@@ -1,9 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useUser } from '@/layout/context/UserContext'; // Yeni Kullanıcı Mimarisi ile Entegrasyon
+import { useUser } from '@/layout/context/UserContext';
 
-// Rolleri UserContext'e (Yeni Mimariye) uyumlu hale getirdik
 export type UserRole = 'CALISAN' | 'TEKNISYEN' | 'KOORDINATOR' | 'ADMIN';
 
 export interface SystemUser {
@@ -26,9 +25,13 @@ export interface Ticket {
     title: string;
     category: 'Donanım/Arıza' | 'Yazılım/Erişim' | 'İdari Hizmet' | 'Güvenlik';
     priority: 'Düşük' | 'Normal' | 'Yüksek' | 'Kritik';
-    status: 'YENİ' | 'İNCELEMEDE' | 'İŞLEMDE' | 'ONAY_BEKLİYOR' | 'KAPATILDI' | 'REDDEDİLDİ';
+    // YENİ STATÜ: ATAMA_BEKLİYOR eklendi
+    status: 'YENİ' | 'İNCELEMEDE' | 'İŞLEMDE' | 'ATAMA_BEKLİYOR' | 'ONAY_BEKLİYOR' | 'KAPATILDI' | 'REDDEDİLDİ';
     requester: string;
     assignee: string | null;
+    // YENİ ALANLAR: Two-Way Handshake için
+    pendingAssignee?: string | null; 
+    delegatedBy?: string | null;
     description: string;
     location?: string;
     serialNo?: string;
@@ -46,6 +49,8 @@ interface TicketContextType {
     updateUserRole: (userId: string, role: UserRole) => Promise<boolean>;
     addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'history' | 'status' | 'assignee'>) => Promise<boolean>;
     assignTicket: (ticketId: string, technicianName: string, actorName?: string, actorRole?: UserRole) => Promise<boolean>;
+    // YENİ FONKSİYON: Atamaya Yanıt Verme
+    respondToAssignment: (ticketId: string, accepted: boolean, actorName: string) => Promise<boolean>;
     unassignTicket: (ticketId: string, actorName?: string, actorRole?: UserRole) => Promise<boolean>;
     completeTicket: (ticketId: string, actorName?: string) => Promise<boolean>;
     confirmTicket: (ticketId: string, approved: boolean, actorName?: string) => Promise<boolean>;
@@ -54,28 +59,23 @@ interface TicketContextType {
 const TicketContext = createContext<TicketContextType | undefined>(undefined);
 
 export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // Aktif kullanıcı ve rol bilgisi doğrudan UserContext üzerinden çekiliyor
     const { users: contextUsers, currentUser } = useUser();
     
-    // Varsayılan mock datalar silindi. Sistem BOŞ bir dizi ile başlar.
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Diğer sayfaların çökmemesi için UserContext verileri eski SystemUser arayüzüne köprüleniyor
     const mappedUsers: SystemUser[] = contextUsers.map(u => ({
         id: u.id,
         name: u.fullName,
         email: u.email,
         role: u.role,
-        department: u.title,
+        department: u.department || 'Belirtilmemiş',
         status: 'AKTİF'
     }));
 
     const activeRole = currentUser.role;
 
     useEffect(() => {
-        // Sahte (Mock) API Fetch işlemleri iptal edildi. 
-        // Talepler sadece yerel önbellekten (LocalStorage) saf halde çekilir.
         try {
             const savedTickets = localStorage.getItem('system_tickets');
             if (savedTickets) {
@@ -101,7 +101,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     const updateUserRole = async (userId: string, role: UserRole): Promise<boolean> => {
-        return false; // UserContext üzerinden yönetiliyor
+        return false; 
     };
 
     const addTicket = async (data: Omit<Ticket, 'id' | 'createdAt' | 'history' | 'status' | 'assignee'>): Promise<boolean> => {
@@ -123,21 +123,67 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return true;
     };
 
+    // ADIM 2: ATAMA MANTIĞI DEĞİŞTİRİLDİ (Onaya Gönderme)
     const assignTicket = async (ticketId: string, technicianName: string, actorName?: string, actorRole?: UserRole): Promise<boolean> => {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) return false;
+
+        const currentActor = actorName || currentUser.fullName;
 
         const updated = tickets.map(t => {
             if (t.id === ticketId) {
                 return {
                     ...t,
-                    assignee: technicianName,
-                    status: 'İŞLEMDE' as const,
+                    pendingAssignee: technicianName,
+                    delegatedBy: currentActor,
+                    status: 'ATAMA_BEKLİYOR' as const,
                     history: [
                         ...t.history,
-                        { date: new Date().toLocaleString('tr-TR'), action: 'İş teknik personele atandı.', user: actorName || currentUser.fullName }
+                        { date: new Date().toLocaleString('tr-TR'), action: `Görev, kabul onayı için [${technicianName}] adlı uzmana iletildi.`, user: currentActor }
                     ]
                 };
+            }
+            return t;
+        });
+        saveTicketsLocally(updated);
+        return true;
+    };
+
+    // ADIM 3: ATAMAYA YANIT VERME MANTIĞI (Kabul / Ret)
+    const respondToAssignment = async (ticketId: string, accepted: boolean, actorName: string): Promise<boolean> => {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (!ticket) return false;
+
+        const updated = tickets.map(t => {
+            if (t.id === ticketId) {
+                if (accepted) {
+                    // KABUL EDİLDİ: Hedef kişi kalıcı görevli olur
+                    return {
+                        ...t,
+                        assignee: t.pendingAssignee || actorName,
+                        pendingAssignee: null,
+                        delegatedBy: null,
+                        status: 'İŞLEMDE' as const,
+                        history: [
+                            ...t.history,
+                            { date: new Date().toLocaleString('tr-TR'), action: 'İş devri KABUL EDİLDİ ve çalışmaya başlandı.', user: actorName }
+                        ]
+                    };
+                } else {
+                    // REDDEDİLDİ: İşlem gönderenin üzerine zimmetlenir ve İŞLEMDE kalır
+                    const fallbackAssignee = t.delegatedBy || null;
+                    return {
+                        ...t,
+                        assignee: fallbackAssignee,
+                        pendingAssignee: null,
+                        delegatedBy: null,
+                        status: fallbackAssignee ? 'İŞLEMDE' as const : 'YENİ' as const,
+                        history: [
+                            ...t.history,
+                            { date: new Date().toLocaleString('tr-TR'), action: `İş devri REDDEDİLDİ. Görev, atamayı yapan kişiye (${fallbackAssignee}) iade edildi.`, user: actorName }
+                        ]
+                    };
+                }
             }
             return t;
         });
@@ -154,10 +200,12 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 return {
                     ...t,
                     assignee: null,
+                    pendingAssignee: null,
+                    delegatedBy: null,
                     status: 'YENİ' as const,
                     history: [
                         ...t.history,
-                        { date: new Date().toLocaleString('tr-TR'), action: 'Teknik personel ataması kaldırıldı.', user: actorName || currentUser.fullName }
+                        { date: new Date().toLocaleString('tr-TR'), action: 'Görev ataması kaldırılarak iş havuza iade edildi.', user: actorName || currentUser.fullName }
                     ]
                 };
             }
@@ -178,7 +226,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     status: 'ONAY_BEKLİYOR' as const,
                     history: [
                         ...t.history,
-                        { date: new Date().toLocaleString('tr-TR'), action: 'İşlem tamamlandı, onaya sunuldu.', user: actorName || currentUser.fullName }
+                        { date: new Date().toLocaleString('tr-TR'), action: 'İşlem tamamlandı, çözüm onaya sunuldu.', user: actorName || currentUser.fullName }
                     ]
                 };
             }
@@ -199,7 +247,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     status: approved ? 'KAPATILDI' as const : 'İŞLEMDE' as const,
                     history: [
                         ...t.history,
-                        { date: new Date().toLocaleString('tr-TR'), action: approved ? 'Talep onaylandı ve kapatıldı.' : 'Talep reddedildi, işleme geri alındı.', user: actorName || currentUser.fullName }
+                        { date: new Date().toLocaleString('tr-TR'), action: approved ? 'Çözüm onaylandı ve talep kapatıldı.' : 'Çözüm reddedildi, işleme geri alındı.', user: actorName || currentUser.fullName }
                     ]
                 };
             }
@@ -221,6 +269,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 updateUserRole,
                 addTicket,
                 assignTicket,
+                respondToAssignment,
                 unassignTicket,
                 completeTicket,
                 confirmTicket

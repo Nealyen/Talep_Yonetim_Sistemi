@@ -33,14 +33,17 @@ const TaleplerimPage = () => {
     });
 
     const filteredTickets = myCreatedTickets.filter((ticket) => {
-        const query = search.toLocaleLowerCase('tr-TR');
-        return (
-            (!query || `${ticket.id} ${ticket.title} ${ticket.category}`.toLocaleLowerCase('tr-TR').includes(query)) &&
-            (!statusFilter || ticket.status === statusFilter)
-        );
+        const query = search.trim().toLocaleLowerCase('tr-TR');
+        const matchesSearch = !query || 
+            ticket.id.toLocaleLowerCase('tr-TR').includes(query) ||
+            ticket.title.toLocaleLowerCase('tr-TR').includes(query) ||
+            ticket.category.toLocaleLowerCase('tr-TR').includes(query);
+
+        const matchesStatus = !statusFilter || ticket.status === statusFilter;
+
+        return matchesSearch && matchesStatus;
     });
 
-    // Tip güvenli ve kurumsal renk hiyerarşisine uygun durum rozeti fonksiyonu
     const getStatusBadge = (status: Ticket['status']) => {
         switch (status) {
             case 'YENİ':
@@ -105,16 +108,22 @@ const TaleplerimPage = () => {
                     {loadError && <Message severity="warn" className="w-full mb-3" text={loadError} />}
                     
                     <div className="flex flex-wrap gap-2 mb-3">
-                        <InputText 
-                            value={search} 
-                            onChange={(event) => setSearch(event.target.value)} 
-                            placeholder="Talep ara..." 
-                            className="w-full md:w-20rem"
-                        />
+                        <span className="p-input-icon-left w-full md:w-25rem">
+                            <i className="pi pi-search text-primary" />
+                            <InputText 
+                                value={search} 
+                                onChange={(e) => setSearch(e.target.value)} 
+                                placeholder="Taleplerim'de Arayın..." 
+                                className="w-full"
+                                tooltip="Talep numarası başlık veya Kategori başlıklarına göre anlık arama yapar"
+                                tooltipOptions={{ position: 'bottom' }}
+                            />
+                        </span>
+                        
                         <Dropdown 
                             value={statusFilter} 
                             options={['YENİ', 'İŞLEMDE', 'ONAY_BEKLİYOR', 'KAPATILDI', 'REDDEDİLDİ']} 
-                            onChange={(event) => setStatusFilter(event.value)} 
+                            onChange={(e) => setStatusFilter(e.value)} 
                             placeholder="Durum Filtresi" 
                             showClear 
                         />
@@ -144,7 +153,6 @@ const TaleplerimPage = () => {
                 </Card>
             </div>
 
-            {/* Talep Detay ve Süreç Tarihçesi Modalı */}
             <Dialog 
                 header={`Talep Detayı - ${selectedTicket?.id}`} 
                 visible={dialogVisible} 

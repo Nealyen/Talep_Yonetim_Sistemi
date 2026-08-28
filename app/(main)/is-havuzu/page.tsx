@@ -12,6 +12,7 @@ import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { Message } from 'primereact/message';
+import { RoleRouteGuard } from '@/layout/RoleRouteGuard';
 
 const IsHavuzuPage = () => {
     const { tickets, assignTicket, isLoading, loadError } = useTickets();
@@ -68,55 +69,57 @@ const IsHavuzuPage = () => {
     };
 
     return (
-        <div className="grid">
-            <Toast ref={toast} />
-            <div className="col-12">
-                <Card 
-                    title="Teknik Servis İş Havuzu" 
-                    subTitle="Müdahale bekleyen ve henüz bir teknisyene atanmamış sahipsiz talepler."
-                >
-                    {isLoading && <Message severity="info" className="w-full mb-3" text="İş havuzu yükleniyor..." />}
-                    {loadError && <Message severity="warn" className="w-full mb-3" text={loadError} />}
-                    
-                    <div className="flex flex-wrap gap-2 mb-3">
-                        <InputText 
-                            value={search} 
-                            onChange={(event) => setSearch(event.target.value)} 
-                            placeholder="Talep veya birim ara..." 
-                            className="w-full md:w-20rem"
-                        />
-                        <Dropdown 
-                            value={priorityFilter} 
-                            options={['Düşük', 'Normal', 'Yüksek', 'Kritik']} 
-                            onChange={(event) => setPriorityFilter(event.value)} 
-                            placeholder="Aciliyet Filtresi" 
-                            showClear 
-                        />
-                    </div>
-
-                    <DataTable 
-                        value={filteredTickets} 
-                        paginator 
-                        rows={10} 
-                        responsiveLayout="scroll" 
-                        emptyMessage="Havuzda atanmayı bekleyen açık iş bulunmamaktadır."
+        <RoleRouteGuard allowedRoles={['TEKNISYEN', 'KOORDINATOR', 'ADMIN']}>
+            <div className="grid">
+                <Toast ref={toast} />
+                <div className="col-12">
+                    <Card 
+                        title="Teknik Servis İş Havuzu" 
+                        subTitle="Müdahale bekleyen ve henüz bir teknisyene atanmamış sahipsiz talepler."
                     >
-                        <Column field="id" header="Kayıt No" style={{ width: '120px' }} />
-                        <Column field="title" header="Talep Başlığı" />
-                        <Column field="category" header="Kategori" style={{ width: '150px' }} />
-                        <Column field="priority" header="Aciliyet" style={{ width: '100px' }} />
-                        <Column field="requester" header="Talep Sahibi" style={{ width: '180px' }} />
-                        <Column 
-                            field="status" 
-                            header="Durum" 
-                            style={{ width: '120px' }} 
-                            body={() => <Tag value="HAVUZDA" severity="info" />} 
-                        />
-                        <Column header="Müdahale" body={actionBodyTemplate} style={{ width: '160px' }} />
-                    </DataTable>
-                </Card>
+                        {isLoading && <Message severity="info" className="w-full mb-3" text="İş havuzu yükleniyor..." />}
+                        {loadError && <Message severity="warn" className="w-full mb-3" text={loadError} />}
+                        
+                        <div className="flex flex-wrap gap-2 mb-3">
+                            <InputText 
+                                value={search} 
+                                onChange={(event) => setSearch(event.target.value)} 
+                                placeholder="Talep veya birim ara..." 
+                                className="w-full md:w-20rem"
+                            />
+                            <Dropdown 
+                                value={priorityFilter} 
+                                options={['Düşük', 'Normal', 'Yüksek', 'Kritik']} 
+                                onChange={(event) => setPriorityFilter(event.value)} 
+                                placeholder="Aciliyet Filtresi" 
+                                showClear 
+                            />
+                        </div>
+
+                        <DataTable 
+                            value={filteredTickets} 
+                            paginator 
+                            rows={10} 
+                            responsiveLayout="scroll" 
+                            emptyMessage="Havuzda atanmayı bekleyen açık iş bulunmamaktadır."
+                        >
+                            <Column field="id" header="Kayıt No" style={{ width: '120px' }} />
+                            <Column field="title" header="Talep Başlığı" />
+                            <Column field="category" header="Kategori" style={{ width: '150px' }} />
+                            <Column field="priority" header="Aciliyet" style={{ width: '100px' }} />
+                            <Column field="requester" header="Talep Sahibi" style={{ width: '180px' }} />
+                            <Column 
+                                field="status" 
+                                header="Durum" 
+                                style={{ width: '120px' }} 
+                                body={() => <Tag value="HAVUZDA" severity="info" />} 
+                            />
+                            <Column header="Müdahale" body={actionBodyTemplate} style={{ width: '160px' }} />
+                        </DataTable>
+                    </Card>
+                </div>
             </div>
-        </div>
+        </RoleRouteGuard>
     );
 };
 
