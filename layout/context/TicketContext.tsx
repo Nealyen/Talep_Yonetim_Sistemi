@@ -20,16 +20,24 @@ export interface TicketHistory {
     user: string;
 }
 
+// 1. YENİ EKLENEN MESAİ KAYDI ARAYÜZÜ (WorkLog)
+export interface WorkLog {
+    id: string;
+    fullName: string;
+    sicilNo: string;
+    startDate: string;
+    endDate: string;
+    durationStr: string;
+}
+
 export interface Ticket {
     id: string;
     title: string;
-    category: 'Donanım/Arıza' | 'Yazılım/Erişim' | 'İdari Hizmet' | 'Güvenlik';
+    category: 'Donanım/Arıza' | 'Yazılım/Erişim' | 'İdari Hizmet' | 'Güvenlik' | string;
     priority: 'Düşük' | 'Normal' | 'Yüksek' | 'Kritik';
-    // YENİ STATÜ: ATAMA_BEKLİYOR eklendi
     status: 'YENİ' | 'İNCELEMEDE' | 'İŞLEMDE' | 'ATAMA_BEKLİYOR' | 'ONAY_BEKLİYOR' | 'KAPATILDI' | 'REDDEDİLDİ';
     requester: string;
     assignee: string | null;
-    // YENİ ALANLAR: Two-Way Handshake için
     pendingAssignee?: string | null; 
     delegatedBy?: string | null;
     description: string;
@@ -37,6 +45,18 @@ export interface Ticket {
     serialNo?: string;
     createdAt: string;
     history: TicketHistory[];
+    
+    sicilNo?: string;
+    kullaniciDahiliNo?: string;
+    computerName?: string;
+    ipNo?: string;
+    ulasilacakDahiliNo?: string;
+    cepTelNo?: string;
+    odaNo?: string;
+    attachedFiles?: string[];
+    
+    // 2. TICKET MODELİNE MESAİ KAYITLARI DİZİSİ EKLENDİ
+    workLogs?: WorkLog[];
 }
 
 interface TicketContextType {
@@ -49,11 +69,11 @@ interface TicketContextType {
     updateUserRole: (userId: string, role: UserRole) => Promise<boolean>;
     addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'history' | 'status' | 'assignee'>) => Promise<boolean>;
     assignTicket: (ticketId: string, technicianName: string, actorName?: string, actorRole?: UserRole) => Promise<boolean>;
-    // YENİ FONKSİYON: Atamaya Yanıt Verme
     respondToAssignment: (ticketId: string, accepted: boolean, actorName: string) => Promise<boolean>;
     unassignTicket: (ticketId: string, actorName?: string, actorRole?: UserRole) => Promise<boolean>;
     completeTicket: (ticketId: string, actorName?: string) => Promise<boolean>;
     confirmTicket: (ticketId: string, approved: boolean, actorName?: string) => Promise<boolean>;
+    updateTicket: (ticketId: string, updatedData: Partial<Ticket>, actor: string) => Promise<boolean>;
 }
 
 const TicketContext = createContext<TicketContextType | undefined>(undefined);
@@ -96,16 +116,11 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         localStorage.setItem('system_tickets', JSON.stringify(newTickets));
     };
 
-    const switchRoleAndReload = (role: UserRole) => {
-        console.warn("switchRoleAndReload devredışı. Roller artık UserContext'ten yönetiliyor.");
-    };
-
-    const updateUserRole = async (userId: string, role: UserRole): Promise<boolean> => {
-        return false; 
-    };
+    const switchRoleAndReload = (role: UserRole) => {};
+    const updateUserRole = async (userId: string, role: UserRole): Promise<boolean> => { return false; };
 
     const addTicket = async (data: Omit<Ticket, 'id' | 'createdAt' | 'history' | 'status' | 'assignee'>): Promise<boolean> => {
-        if (!data.title.trim() || !data.description.trim() || !data.requester.trim()) return false;
+        if (!data.title.trim() || !data.requester.trim()) return false;
         
         const now = new Date().toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         const newTicket: Ticket = {
@@ -123,7 +138,6 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return true;
     };
 
-    // ADIM 2: ATAMA MANTIĞI DEĞİŞTİRİLDİ (Onaya Gönderme)
     const assignTicket = async (ticketId: string, technicianName: string, actorName?: string, actorRole?: UserRole): Promise<boolean> => {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) return false;
@@ -149,7 +163,6 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return true;
     };
 
-    // ADIM 3: ATAMAYA YANIT VERME MANTIĞI (Kabul / Ret)
     const respondToAssignment = async (ticketId: string, accepted: boolean, actorName: string): Promise<boolean> => {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) return false;
@@ -157,7 +170,6 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const updated = tickets.map(t => {
             if (t.id === ticketId) {
                 if (accepted) {
-                    // KABUL EDİLDİ: Hedef kişi kalıcı görevli olur
                     return {
                         ...t,
                         assignee: t.pendingAssignee || actorName,
@@ -170,7 +182,6 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         ]
                     };
                 } else {
-                    // REDDEDİLDİ: İşlem gönderenin üzerine zimmetlenir ve İŞLEMDE kalır
                     const fallbackAssignee = t.delegatedBy || null;
                     return {
                         ...t,
@@ -182,7 +193,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                             ...t.history,
                             { date: new Date().toLocaleString('tr-TR'), action: `İş devri REDDEDİLDİ. Görev, atamayı yapan kişiye (${fallbackAssignee}) iade edildi.`, user: actorName }
                         ]
-                    };
+                    }
                 }
             }
             return t;
@@ -257,24 +268,39 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return true;
     };
 
+    const updateTicket = async (ticketId: string, updatedData: Partial<Ticket>, actor: string): Promise<boolean> => {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (!ticket) return false;
+
+        const now = new Date().toLocaleString('tr-TR');
+
+        const updated = tickets.map((t) => {
+            if (t.id === ticketId) {
+                const changes: string[] = [];
+                if (updatedData.priority && updatedData.priority !== t.priority) changes.push(`Öncelik güncellendi`);
+                if (updatedData.odaNo && updatedData.odaNo !== t.odaNo) changes.push(`Oda No güncellendi`);
+                if (updatedData.workLogs && updatedData.workLogs.length > (t.workLogs?.length || 0)) changes.push(`Mesai kaydı eklendi`);
+                
+                const changeSummary = changes.length > 0 ? ` (${changes.join(', ')})` : '';
+
+                return {
+                    ...t,
+                    ...updatedData,
+                    history: [
+                        ...t.history,
+                        { action: `Talep bilgileri güncellendi${changeSummary}`, user: actor, date: now }
+                    ]
+                };
+            }
+            return t;
+        });
+        
+        saveTicketsLocally(updated);
+        return true;
+    };
+
     return (
-        <TicketContext.Provider
-            value={{
-                tickets,
-                users: mappedUsers,
-                isLoading,
-                loadError: null,
-                activeRole,
-                switchRoleAndReload,
-                updateUserRole,
-                addTicket,
-                assignTicket,
-                respondToAssignment,
-                unassignTicket,
-                completeTicket,
-                confirmTicket
-            }}
-        >
+        <TicketContext.Provider value={{ tickets, users: mappedUsers, isLoading, loadError: null, activeRole, switchRoleAndReload, updateUserRole, addTicket, assignTicket, respondToAssignment, unassignTicket, completeTicket, confirmTicket, updateTicket }}>
             {children}
         </TicketContext.Provider>
     );
@@ -282,8 +308,6 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 export const useTickets = () => {
     const context = useContext(TicketContext);
-    if (!context) {
-        throw new Error('useTickets must be used within a TicketProvider');
-    }
+    if (!context) { throw new Error('useTickets must be used within a TicketProvider'); }
     return context;
 };
