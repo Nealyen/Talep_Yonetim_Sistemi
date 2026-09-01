@@ -12,6 +12,7 @@ export interface AppUser {
     email: string;
     sicilNo: string;
     dahili: string;
+    title?: string;
     specialty?: SpecialtyType;
     department?: string;
 }

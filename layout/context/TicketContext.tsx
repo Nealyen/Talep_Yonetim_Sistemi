@@ -28,6 +28,9 @@ export interface WorkLog {
     startDate: string;
     endDate: string;
     durationStr: string;
+    description?: string;
+    status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+    requestedBy?: string;
 }
 
 export interface Ticket {
@@ -45,6 +48,7 @@ export interface Ticket {
     serialNo?: string;
     createdAt: string;
     history: TicketHistory[];
+    barkodNo?: string;
     
     sicilNo?: string;
     kullaniciDahiliNo?: string;
@@ -57,6 +61,7 @@ export interface Ticket {
     
     // 2. TICKET MODELİNE MESAİ KAYITLARI DİZİSİ EKLENDİ
     workLogs?: WorkLog[];
+    pendingWorkLogs?: WorkLog[];
 }
 
 interface TicketContextType {
@@ -68,12 +73,14 @@ interface TicketContextType {
     switchRoleAndReload: (role: UserRole) => void;
     updateUserRole: (userId: string, role: UserRole) => Promise<boolean>;
     addTicket: (ticket: Omit<Ticket, 'id' | 'createdAt' | 'history' | 'status' | 'assignee'>) => Promise<boolean>;
-    assignTicket: (ticketId: string, technicianName: string, actorName?: string, actorRole?: UserRole) => Promise<boolean>;
+    assignTicket: (ticketId: string, technicianName: string, actorName?: string, actorRole?: UserRole, message?: string) => Promise<boolean>;
     respondToAssignment: (ticketId: string, accepted: boolean, actorName: string) => Promise<boolean>;
-    unassignTicket: (ticketId: string, actorName?: string, actorRole?: UserRole) => Promise<boolean>;
-    completeTicket: (ticketId: string, actorName?: string) => Promise<boolean>;
+    unassignTicket: (ticketId: string, actorName?: string, actorRole?: UserRole, message?: string) => Promise<boolean>;
+    completeTicket: (ticketId: string, actorName?: string, actorRole?: UserRole, message?: string) => Promise<boolean>;
     confirmTicket: (ticketId: string, approved: boolean, actorName?: string) => Promise<boolean>;
     updateTicket: (ticketId: string, updatedData: Partial<Ticket>, actor: string) => Promise<boolean>;
+    requestWorkLogApproval: (ticketId: string, log: WorkLog) => Promise<boolean>;
+    resolveWorkLogApproval: (ticketId: string, logId: string, isApproved: boolean) => Promise<boolean>;
 }
 
 const TicketContext = createContext<TicketContextType | undefined>(undefined);
@@ -138,11 +145,15 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return true;
     };
 
-    const assignTicket = async (ticketId: string, technicianName: string, actorName?: string, actorRole?: UserRole): Promise<boolean> => {
+    const assignTicket = async (ticketId: string, technicianName: string, actorName?: string, actorRole?: UserRole, message?: string): Promise<boolean> => {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) return false;
 
         const currentActor = actorName || currentUser.fullName;
+        const messageText = message?.trim();
+        const actionText = messageText
+            ? `Görev, kabul onayı için [${technicianName}] adlı uzmana iletildi. Açıklama: ${messageText}`
+            : `Görev, kabul onayı için [${technicianName}] adlı uzmana iletildi.`;
 
         const updated = tickets.map(t => {
             if (t.id === ticketId) {
@@ -153,7 +164,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     status: 'ATAMA_BEKLİYOR' as const,
                     history: [
                         ...t.history,
-                        { date: new Date().toLocaleString('tr-TR'), action: `Görev, kabul onayı için [${technicianName}] adlı uzmana iletildi.`, user: currentActor }
+                        { date: new Date().toLocaleString('tr-TR'), action: actionText, user: currentActor }
                     ]
                 };
             }
@@ -202,9 +213,15 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return true;
     };
 
-    const unassignTicket = async (ticketId: string, actorName?: string, actorRole?: UserRole): Promise<boolean> => {
+    const unassignTicket = async (ticketId: string, actorName?: string, actorRole?: UserRole, message?: string): Promise<boolean> => {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) return false;
+
+        const actor = actorName || currentUser.fullName;
+        const messageText = message?.trim();
+        const actionText = messageText
+            ? `Görev ataması kaldırılarak iş havuza iade edildi. Açıklama: ${messageText}`
+            : 'Görev ataması kaldırılarak iş havuza iade edildi.';
 
         const updated = tickets.map(t => {
             if (t.id === ticketId) {
@@ -216,7 +233,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     status: 'YENİ' as const,
                     history: [
                         ...t.history,
-                        { date: new Date().toLocaleString('tr-TR'), action: 'Görev ataması kaldırılarak iş havuza iade edildi.', user: actorName || currentUser.fullName }
+                        { date: new Date().toLocaleString('tr-TR'), action: actionText, user: actor }
                     ]
                 };
             }
@@ -226,9 +243,15 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return true;
     };
 
-    const completeTicket = async (ticketId: string, actorName?: string): Promise<boolean> => {
+    const completeTicket = async (ticketId: string, actorName?: string, actorRole?: UserRole, message?: string): Promise<boolean> => {
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) return false;
+
+        const actor = actorName || currentUser.fullName;
+        const messageText = message?.trim();
+        const actionText = messageText
+            ? `İşlem tamamlandı, çözüm onaya sunuldu. Açıklama: ${messageText}`
+            : 'İşlem tamamlandı, çözüm onaya sunuldu.';
 
         const updated = tickets.map(t => {
             if (t.id === ticketId) {
@@ -237,7 +260,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     status: 'ONAY_BEKLİYOR' as const,
                     history: [
                         ...t.history,
-                        { date: new Date().toLocaleString('tr-TR'), action: 'İşlem tamamlandı, çözüm onaya sunuldu.', user: actorName || currentUser.fullName }
+                        { date: new Date().toLocaleString('tr-TR'), action: actionText, user: actor }
                     ]
                 };
             }
@@ -264,6 +287,80 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             }
             return t;
         });
+        saveTicketsLocally(updated);
+        return true;
+    };
+
+    const requestWorkLogApproval = async (ticketId: string, log: WorkLog): Promise<boolean> => {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (!ticket) return false;
+
+        const pendingLog: WorkLog = {
+            ...log,
+            status: 'PENDING',
+            requestedBy: log.requestedBy || currentUser.fullName,
+        };
+
+        const updated = tickets.map((t) => {
+            if (t.id !== ticketId) return t;
+
+            const existingWorkLogs = Array.isArray(t.workLogs) ? t.workLogs : [];
+            const existingPending = Array.isArray(t.pendingWorkLogs) ? t.pendingWorkLogs : [];
+
+            const nextWorkLogs = existingWorkLogs.some(item => item.id === pendingLog.id)
+                ? existingWorkLogs.map(item => item.id === pendingLog.id ? pendingLog : item)
+                : [...existingWorkLogs, pendingLog];
+
+            const nextPending = existingPending.some(item => item.id === pendingLog.id)
+                ? existingPending.map(item => item.id === pendingLog.id ? pendingLog : item)
+                : [...existingPending, pendingLog];
+
+            return {
+                ...t,
+                workLogs: nextWorkLogs,
+                pendingWorkLogs: nextPending,
+                history: [
+                    ...t.history,
+                    { date: new Date().toLocaleString('tr-TR'), action: `Mesai onayı istendi. ${pendingLog.fullName} için ${pendingLog.durationStr} çalışma kaydı.`, user: pendingLog.requestedBy || currentUser.fullName }
+                ]
+            };
+        });
+
+        saveTicketsLocally(updated);
+        return true;
+    };
+
+    const resolveWorkLogApproval = async (ticketId: string, logId: string, isApproved: boolean): Promise<boolean> => {
+        const ticket = tickets.find(t => t.id === ticketId);
+        if (!ticket) return false;
+
+        const updated = tickets.map((t) => {
+            if (t.id !== ticketId) return t;
+
+            const pendingLogs = Array.isArray(t.pendingWorkLogs) ? t.pendingWorkLogs : [];
+            const workLogs = Array.isArray(t.workLogs) ? t.workLogs : [];
+            const target = pendingLogs.find(item => item.id === logId) || workLogs.find(item => item.id === logId);
+            if (!target) return t;
+
+            const resolvedLog: WorkLog = {
+                ...target,
+                status: isApproved ? 'APPROVED' : 'REJECTED',
+                requestedBy: target.requestedBy || currentUser.fullName,
+            };
+
+            return {
+                ...t,
+                workLogs: workLogs.some(item => item.id === logId)
+                    ? workLogs.map(item => item.id === logId ? resolvedLog : item)
+                    : [...workLogs, resolvedLog],
+                pendingWorkLogs: pendingLogs.filter(item => item.id !== logId),
+                history: [
+                    ...t.history,
+                    { date: new Date().toLocaleString('tr-TR'), action: isApproved ? `Mesai onayı kabul edildi. ${resolvedLog.fullName} için ${resolvedLog.durationStr}.` : `Mesai onayı reddedildi. ${resolvedLog.fullName} için ${resolvedLog.durationStr}.`, user: currentUser.fullName }
+                ]
+            };
+        });
+
         saveTicketsLocally(updated);
         return true;
     };
@@ -300,7 +397,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     return (
-        <TicketContext.Provider value={{ tickets, users: mappedUsers, isLoading, loadError: null, activeRole, switchRoleAndReload, updateUserRole, addTicket, assignTicket, respondToAssignment, unassignTicket, completeTicket, confirmTicket, updateTicket }}>
+        <TicketContext.Provider value={{ tickets, users: mappedUsers, isLoading, loadError: null, activeRole, switchRoleAndReload, updateUserRole, addTicket, assignTicket, respondToAssignment, unassignTicket, completeTicket, confirmTicket, updateTicket, requestWorkLogApproval, resolveWorkLogApproval }}>
             {children}
         </TicketContext.Provider>
     );

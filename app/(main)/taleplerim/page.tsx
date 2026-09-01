@@ -1,25 +1,29 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTickets, Ticket } from '@/layout/context/TicketContext';
+import { useTickets, Ticket, WorkLog } from '@/layout/context/TicketContext';
 import { useUser } from '@/layout/context/UserContext';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
 import { Card } from 'primereact/card';
-import { Timeline } from 'primereact/timeline';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { Message } from 'primereact/message';
+import TicketHistoryModal from '@/app/components/ticket/TicketHistoryModal';
+import TicketActionReasonModal from '@/app/components/ticket/TicketActionReasonModal';
+import WorkLogApprovalModal from '@/app/components/ticket/WorkLogApprovalModal';
 
 const TaleplerimPage = () => {
-    const { tickets, confirmTicket, isLoading, loadError } = useTickets();
+    const { tickets, confirmTicket, assignTicket, updateTicket, requestWorkLogApproval, resolveWorkLogApproval, isLoading, loadError } = useTickets();
     const { currentUser } = useUser();
     
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
     const [dialogVisible, setDialogVisible] = useState(false);
+    const [actionReasonModalVisible, setActionReasonModalVisible] = useState(false);
+    const [workLogApprovalVisible, setWorkLogApprovalVisible] = useState(false);
+    const [actionType, setActionType] = useState<'release' | 'complete'>('release');
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
@@ -31,6 +35,14 @@ const TaleplerimPage = () => {
         const activeUser = normalize(currentUser.fullName);
         return requester === activeUser || requester.startsWith(activeUser);
     });
+
+    const pendingWorkLogsForCurrentUser = tickets.reduce<Array<{ ticketId: string; ticketTitle: string; workLog: WorkLog }>>((acc, ticket) => {
+        const pendingLogs = (ticket.pendingWorkLogs || []).filter((log) => log.fullName === currentUser.fullName && log.status === 'PENDING');
+        pendingLogs.forEach((log) => {
+            acc.push({ ticketId: ticket.id, ticketTitle: ticket.title, workLog: log });
+        });
+        return acc;
+    }, []);
 
     const filteredTickets = myCreatedTickets.filter((ticket) => {
         const query = search.trim().toLocaleLowerCase('tr-TR');
@@ -97,11 +109,57 @@ const TaleplerimPage = () => {
         );
     };
 
+    const openTicketHistory = (ticket: Ticket) => {
+        setSelectedTicket(ticket);
+        setDialogVisible(true);
+    };
+
+    const handleAssignAction = async (action: 'assign' | 'accept' | 'reject' | 'close', payload?: { ticketId?: string | null; technician?: string; message?: string }) => {
+        if (action === 'close') {
+            setDialogVisible(false);
+            return;
+        }
+
+        if (action === 'assign' && payload?.ticketId && payload.technician) {
+            await assignTicket(payload.ticketId, payload.technician, currentUser.fullName, currentUser.role, payload.message);
+        }
+    };
+
+    const handleWorkLogAction = async (action: 'addWorkLog' | 'requestApproval' | 'close', payload?: { workLog?: WorkLog; ticketId?: string | null }) => {
+        if (action === 'close') {
+            setDialogVisible(false);
+            return;
+        }
+
+        if (action === 'requestApproval' && payload?.workLog && payload.ticketId) {
+            await requestWorkLogApproval(payload.ticketId, payload.workLog);
+            setDialogVisible(false);
+            return;
+        }
+
+        if (action === 'addWorkLog' && payload?.workLog && payload.ticketId) {
+            const ticket = tickets.find((item) => item.id === payload.ticketId);
+            if (!ticket) return;
+            await updateTicket(payload.ticketId, { workLogs: [...(ticket.workLogs || []), payload.workLog] }, currentUser.fullName);
+            setDialogVisible(false);
+        }
+    };
+
+    const handleRelease = async (ticketId: string, message?: string) => {
+        await confirmTicket(ticketId, false, currentUser.fullName);
+        setActionReasonModalVisible(false);
+    };
+
+    const handleComplete = async (ticketId: string, message?: string) => {
+        await confirmTicket(ticketId, true, currentUser.fullName);
+        setActionReasonModalVisible(false);
+    };
+
     return (
         <div className="grid">
             <div className="col-12">
                 <Card 
-                    title="Açtığım Resmi Talepler" 
+                    title={<div className="flex justify-content-between align-items-center gap-2"><span>Açtığım Resmi Talepler</span><Button label="Mesai Onayları" icon="pi pi-check-circle" severity={pendingWorkLogsForCurrentUser.length > 0 ? 'info' : 'secondary'} badge={pendingWorkLogsForCurrentUser.length > 0 ? pendingWorkLogsForCurrentUser.length.toString() : undefined} badgeClassName="p-badge-info" onClick={() => setWorkLogApprovalVisible(true)} /></div>}
                     subTitle={`Sayın ${currentUser.fullName}, sadece sizin tarafınızdan oluşturulan talepler listelenmektedir.`}
                 >
                     {isLoading && <Message severity="info" className="w-full mb-3" text="Talepler yükleniyor..." />}
@@ -135,6 +193,8 @@ const TaleplerimPage = () => {
                         rows={10} 
                         responsiveLayout="scroll" 
                         emptyMessage="Açtığınız herhangi bir aktif talep bulunmamaktadır."
+                        onRowClick={(event) => openTicketHistory(event.data as Ticket)}
+                        rowClassName={() => 'cursor-pointer hover:surface-hover'}
                     >
                         <Column field="id" header="Talep No" style={{ width: '120px' }} />
                         <Column field="title" header="Talep Başlığı" />
@@ -153,41 +213,39 @@ const TaleplerimPage = () => {
                 </Card>
             </div>
 
-            <Dialog 
-                header={`Talep Detayı - ${selectedTicket?.id}`} 
-                visible={dialogVisible} 
-                style={{ width: '600px' }} 
+            <TicketHistoryModal
+                visible={dialogVisible}
+                ticket={selectedTicket}
                 onHide={() => setDialogVisible(false)}
-            >
-                {selectedTicket && (
-                    <div className="flex flex-column gap-4">
-                        <div className="surface-ground p-3 border-round">
-                            <div className="flex justify-content-between align-items-center mb-2">
-                                <span className="font-bold text-lg">{selectedTicket.title}</span>
-                                <div className="flex gap-2 align-items-center">
-                                    <Tag value={selectedTicket.priority} severity={selectedTicket.priority === 'Kritik' ? 'danger' : 'info'} />
-                                    {getStatusBadge(selectedTicket.status)}
-                                </div>
-                            </div>
-                            <p className="m-0 text-700 font-sans text-sm">{selectedTicket.description}</p>
-                        </div>
+                onAction={() => setDialogVisible(false)}
+            />
 
-                        <div>
-                            <h6 className="font-bold mb-3">Süreç Tarihçesi & Denetim İzi</h6>
-                            <Timeline 
-                                value={selectedTicket.history} 
-                                opposite={(item) => <small className="text-500">{item.date}</small>} 
-                                content={(item) => (
-                                    <div className="mb-2">
-                                        <div className="font-bold text-sm">{item.action}</div>
-                                        <small className="text-500">İşlem Yapan: {item.user}</small>
-                                    </div>
-                                )} 
-                            />
-                        </div>
-                    </div>
-                )}
-            </Dialog>
+            <TicketActionReasonModal
+                visible={actionReasonModalVisible}
+                actionType={actionType}
+                ticket={selectedTicket}
+                onHide={() => setActionReasonModalVisible(false)}
+                onConfirm={(messageText) => {
+                    if (!selectedTicket) return;
+                    if (actionType === 'release') {
+                        void handleRelease(selectedTicket.id, messageText);
+                    } else {
+                        void handleComplete(selectedTicket.id, messageText);
+                    }
+                }}
+            />
+
+            <WorkLogApprovalModal
+                visible={workLogApprovalVisible}
+                pendingData={pendingWorkLogsForCurrentUser}
+                onHide={() => setWorkLogApprovalVisible(false)}
+                onResolve={async (ticketId, logId, isApproved) => {
+                    const success = await resolveWorkLogApproval(ticketId, logId, isApproved);
+                    if (success) {
+                        setWorkLogApprovalVisible(false);
+                    }
+                }}
+            />
         </div>
     );
 };
