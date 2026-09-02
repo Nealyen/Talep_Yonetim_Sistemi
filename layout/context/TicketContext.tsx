@@ -78,9 +78,10 @@ interface TicketContextType {
     unassignTicket: (ticketId: string, actorName?: string, actorRole?: UserRole, message?: string) => Promise<boolean>;
     completeTicket: (ticketId: string, actorName?: string, actorRole?: UserRole, message?: string) => Promise<boolean>;
     confirmTicket: (ticketId: string, approved: boolean, actorName?: string) => Promise<boolean>;
-    updateTicket: (ticketId: string, updatedData: Partial<Ticket>, actor: string) => Promise<boolean>;
+    updateTicket: (ticketId: string, updatedData: Partial<Ticket>, actor: string, actorRole?: UserRole) => Promise<boolean>;
     requestWorkLogApproval: (ticketId: string, log: WorkLog) => Promise<boolean>;
     resolveWorkLogApproval: (ticketId: string, logId: string, isApproved: boolean) => Promise<boolean>;
+    resetTickets: () => void;
 }
 
 const TicketContext = createContext<TicketContextType | undefined>(undefined);
@@ -126,45 +127,65 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const switchRoleAndReload = (role: UserRole) => {};
     const updateUserRole = async (userId: string, role: UserRole): Promise<boolean> => { return false; };
 
-    const addTicket = async (data: Omit<Ticket, 'id' | 'createdAt' | 'history' | 'status' | 'assignee'>): Promise<boolean> => {
-        if (!data.title.trim() || !data.requester.trim()) return false;
-        
-        const now = new Date().toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        const newTicket: Ticket = {
-            ...data,
-            id: `TLP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-            status: 'YENİ',
-            assignee: null,
-            createdAt: now,
-            history: [
-                { date: now, action: 'Talep oluşturuldu.', user: data.requester }
-            ]
-        };
-        
-        saveTicketsLocally([newTicket, ...tickets]);
-        return true;
+    const generateUniqueTicketId = (existingTickets: Ticket[]): string => {
+    const year = new Date().getFullYear();
+    const existingIds = new Set(existingTickets.map((t) => t.id));
+
+    let candidateId: string;
+    do {
+        candidateId = `TLP-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
+    } while (existingIds.has(candidateId));
+
+    return candidateId;
+};
+
+const addTicket = async (data: Omit<Ticket, 'id' | 'createdAt' | 'history' | 'status' | 'assignee'>): Promise<boolean> => {
+    if (!data.title.trim() || !data.requester.trim()) return false;
+    
+    const now = new Date().toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const newTicket: Ticket = {
+        ...data,
+        id: generateUniqueTicketId(tickets),
+        status: 'YENİ',
+        assignee: null,
+        createdAt: now,
+        history: [
+            { date: now, action: 'Talep oluşturuldu.', user: data.requester }
+        ]
     };
+    
+    saveTicketsLocally([newTicket, ...tickets]);
+    return true;
+};
 
     const assignTicket = async (ticketId: string, technicianName: string, actorName?: string, actorRole?: UserRole, message?: string): Promise<boolean> => {
-        const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket) return false;
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return false;
 
-        const currentActor = actorName || currentUser.fullName;
-        const messageText = message?.trim();
-        const actionText = messageText
-            ? `Görev, kabul onayı için [${technicianName}] adlı uzmana iletildi. Açıklama: ${messageText}`
-            : `Görev, kabul onayı için [${technicianName}] adlı uzmana iletildi.`;
+    const currentActor = actorName || currentUser.fullName;
+    const messageText = message?.trim();
+
+    // KURAL: Bir kişi işi doğrudan KENDİSİNE atıyorsa (örn. iş havuzundan üzerine alma),
+    // kendi kendinden onay beklemesi anlamsızdır — talep doğrudan aktif hale gelir.
+    // "Atama Bekliyor" / kabul-red akışı yalnızca BAŞKASINA devir yapıldığında işler.
+    const isSelfAssignment = technicianName === currentActor;
+
+    if (isSelfAssignment) {
+        const selfAssignText = messageText
+            ? `Talep [${technicianName}] tarafından üzerine alındı. Açıklama: ${messageText}`
+            : `Talep [${technicianName}] tarafından üzerine alındı.`;
 
         const updated = tickets.map(t => {
             if (t.id === ticketId) {
                 return {
                     ...t,
-                    pendingAssignee: technicianName,
-                    delegatedBy: currentActor,
-                    status: 'ATAMA_BEKLİYOR' as const,
+                    assignee: technicianName,
+                    pendingAssignee: null,
+                    delegatedBy: null,
+                    status: 'İŞLEMDE' as const,
                     history: [
                         ...t.history,
-                        { date: new Date().toLocaleString('tr-TR'), action: actionText, user: currentActor }
+                        { date: new Date().toLocaleString('tr-TR'), action: selfAssignText, user: currentActor }
                     ]
                 };
             }
@@ -172,7 +193,30 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         });
         saveTicketsLocally(updated);
         return true;
-    };
+    }
+
+    const actionText = messageText
+        ? `Görev, kabul onayı için [${technicianName}] adlı uzmana iletildi. Açıklama: ${messageText}`
+        : `Görev, kabul onayı için [${technicianName}] adlı uzmana iletildi.`;
+
+    const updated = tickets.map(t => {
+        if (t.id === ticketId) {
+            return {
+                ...t,
+                pendingAssignee: technicianName,
+                delegatedBy: currentActor,
+                status: 'ATAMA_BEKLİYOR' as const,
+                history: [
+                    ...t.history,
+                    { date: new Date().toLocaleString('tr-TR'), action: actionText, user: currentActor }
+                ]
+            };
+        }
+        return t;
+    });
+    saveTicketsLocally(updated);
+    return true;
+};
 
     const respondToAssignment = async (ticketId: string, accepted: boolean, actorName: string): Promise<boolean> => {
         const ticket = tickets.find(t => t.id === ticketId);
@@ -365,39 +409,53 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return true;
     };
 
-    const updateTicket = async (ticketId: string, updatedData: Partial<Ticket>, actor: string): Promise<boolean> => {
-        const ticket = tickets.find(t => t.id === ticketId);
-        if (!ticket) return false;
+    const updateTicket = async (ticketId: string, updatedData: Partial<Ticket>, actor: string, actorRole?: UserRole): Promise<boolean> => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return false;
 
-        const now = new Date().toLocaleString('tr-TR');
+    const now = new Date().toLocaleString('tr-TR');
 
-        const updated = tickets.map((t) => {
-            if (t.id === ticketId) {
-                const changes: string[] = [];
-                if (updatedData.priority && updatedData.priority !== t.priority) changes.push(`Öncelik güncellendi`);
-                if (updatedData.odaNo && updatedData.odaNo !== t.odaNo) changes.push(`Oda No güncellendi`);
-                if (updatedData.workLogs && updatedData.workLogs.length > (t.workLogs?.length || 0)) changes.push(`Mesai kaydı eklendi`);
-                
-                const changeSummary = changes.length > 0 ? ` (${changes.join(', ')})` : '';
+    // KURAL: ADMIN, kendisine ait olmayan (başka bir uzmana atanmış) bir talebi
+    // düzenlerse bu sıradan bir güncelleme değil, bir müdahaledir. Bu durum hem
+    // talebin kendi Süreç Tarihçesi'nde hem de (history üzerinden otomatik olarak)
+    // Denetim İzi sayfasında ayrıca ve açıkça işaretlenir.
+    const isAdminOverride = actorRole === 'ADMIN' && !!ticket.assignee && ticket.assignee !== actor;
 
-                return {
-                    ...t,
-                    ...updatedData,
-                    history: [
-                        ...t.history,
-                        { action: `Talep bilgileri güncellendi${changeSummary}`, user: actor, date: now }
-                    ]
-                };
-            }
-            return t;
-        });
-        
-        saveTicketsLocally(updated);
-        return true;
+    const updated = tickets.map((t) => {
+        if (t.id === ticketId) {
+            const changes: string[] = [];
+            if (updatedData.priority && updatedData.priority !== t.priority) changes.push(`Öncelik güncellendi`);
+            if (updatedData.odaNo && updatedData.odaNo !== t.odaNo) changes.push(`Oda No güncellendi`);
+            if (updatedData.workLogs && updatedData.workLogs.length > (t.workLogs?.length || 0)) changes.push(`Mesai kaydı eklendi`);
+            
+            const changeSummary = changes.length > 0 ? ` (${changes.join(', ')})` : '';
+            const adminNote = isAdminOverride
+                ? ` — ADMIN MÜDAHALESİ: Bu talep [${t.assignee}] adlı uzmana ait olmasına rağmen ADMIN [${actor}] tarafından düzenlendi.`
+                : '';
+
+            return {
+                ...t,
+                ...updatedData,
+                history: [
+                    ...t.history,
+                    { action: `Talep bilgileri güncellendi${changeSummary}${adminNote}`, user: actor, date: now }
+                ]
+            };
+        }
+        return t;
+    });
+    
+    saveTicketsLocally(updated);
+    return true;
+};
+
+    const resetTickets = () => {
+        localStorage.removeItem('system_tickets');
+        setTickets([]);
     };
 
     return (
-        <TicketContext.Provider value={{ tickets, users: mappedUsers, isLoading, loadError: null, activeRole, switchRoleAndReload, updateUserRole, addTicket, assignTicket, respondToAssignment, unassignTicket, completeTicket, confirmTicket, updateTicket, requestWorkLogApproval, resolveWorkLogApproval }}>
+        <TicketContext.Provider value={{ tickets, users: mappedUsers, isLoading, loadError: null, activeRole, switchRoleAndReload, updateUserRole, addTicket, assignTicket, respondToAssignment, unassignTicket, completeTicket, confirmTicket, updateTicket, requestWorkLogApproval, resolveWorkLogApproval, resetTickets }}>
             {children}
         </TicketContext.Provider>
     );

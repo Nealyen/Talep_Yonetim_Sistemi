@@ -55,7 +55,7 @@ export const useUzmanAktifGorevler = () => {
     const handleSaveEdit = async (updatedData: Partial<Ticket>) => {
         if (!selectedTicket) return;
 
-        const success = await updateTicket(selectedTicket.id, updatedData, currentUser.fullName);
+        const success = await updateTicket(selectedTicket.id, updatedData, currentUser.fullName, currentUser.role);
         if (success) {
             toast.current?.show({ severity: 'success', summary: 'Kayıt Güncellendi', detail: 'Değişiklikler kaydedildi.', life: 3000 });
             setEditDialogVisible(false);
@@ -180,7 +180,7 @@ export const useUzmanAktifGorevler = () => {
     // NOT: Orijinal kodda bu buton yalnızca bir onay diyaloğu gösterir; kaydetme
     // işlemi zaten TicketEditModal'ın kendi "Kaydet" akışıyla (handleSaveEdit) yapılıyor.
     // Davranış birebir korunuyor.
-    const confirmSave = () => {
+    const confirmSave = (save: () => void) => {
         if (!selectedTicket) return;
         confirmDialog({
             message: 'Yapılan değişiklikleri kaydetmek istediğinize emin misiniz?',
@@ -190,9 +190,7 @@ export const useUzmanAktifGorevler = () => {
             rejectLabel: 'İptal',
             acceptClassName: 'p-button-success',
             accept: () => {
-                if (selectedTicket) {
-                    setSelectedTicket(selectedTicket);
-                }
+                save();
             }
         });
     };

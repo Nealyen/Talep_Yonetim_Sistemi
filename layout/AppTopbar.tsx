@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, forwardRef, useImperativeHandle, useContext } from 'react';
 import { useUser, UserRole, SpecialtyType } from '@/layout/context/UserContext';
+import { useTickets } from '@/layout/context/TicketContext';
 import { LayoutContext } from '@/layout/context/layoutcontext';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -9,6 +10,7 @@ import { Tag } from 'primereact/tag';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
 import { Message } from 'primereact/message';
+
 
 const ROLE_OPTIONS: { label: string; value: UserRole }[] = [
     { label: 'Çalışan (Talep Sahibi)', value: 'CALISAN' },
@@ -36,6 +38,7 @@ export const AppTopbar = forwardRef<any, any>((props, ref) => {
     
     // UYUMSUZLUK GİDERİLDİ: Context'teki doğru fonksiyon isimleri çağrıldı.
     const { users, currentUser, setCurrentUser, addUser, resetUsers } = useUser();
+const { resetTickets } = useTickets();
     
     const [visible, setVisible] = useState(false);
     const [view, setView] = useState<'list' | 'add'>('list');
@@ -86,9 +89,10 @@ export const AppTopbar = forwardRef<any, any>((props, ref) => {
     };
 
     const handleReset = () => {
-        resetUsers();
-        window.location.reload(); // Değişikliklerin her yerde aktif olması için sayfayı tazele
-    };
+    resetUsers();
+    resetTickets();
+    window.location.reload();
+};
 
     const getRoleSeverity = (role: UserRole) => {
         if (role === 'ADMIN') return 'danger';

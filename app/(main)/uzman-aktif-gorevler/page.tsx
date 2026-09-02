@@ -55,7 +55,7 @@ const UzmanAktifGorevlerPage = () => {
         confirmSave
     } = useUzmanAktifGorevler();
 
-    const editModalFooter = (
+    const editModalFooter = (save: () => void) => (
         <div className="flex flex-wrap justify-content-between align-items-center w-full gap-2 pt-2 border-top-1 surface-border">
             <div className="flex flex-wrap gap-2">
                 <Button
@@ -87,7 +87,7 @@ const UzmanAktifGorevlerPage = () => {
                 )}
             </div>
             <div className="flex gap-2">
-                <Button label="Değişiklikleri Kaydet" icon="pi pi-check" severity="success" onClick={confirmSave} />
+                <Button label="Değişiklikleri Kaydet" icon="pi pi-check" severity="success" onClick={() => confirmSave(save)} />
             </div>
         </div>
     );
@@ -130,7 +130,7 @@ const UzmanAktifGorevlerPage = () => {
                         >
                             <Column field="id" header="Kayıt No" style={{ width: '120px' }} />
                             <Column field="title" header="Talep Başlığı" />
-                            <Column field="category" header="Kategori" style={{ width: '180px' }} />
+                            <Column field="category" header="İlgili Ekip" style={{ width: '180px' }} />
                             <Column field="priority" header="Aciliyet" style={{ width: '100px' }} />
                             <Column field="requester" header="Talep Sahibi" style={{ width: '180px' }} />
                             <Column field="status" header="Durum" style={{ width: '140px' }} body={(r: Ticket) => <StatusBadge status={r.status} />} />

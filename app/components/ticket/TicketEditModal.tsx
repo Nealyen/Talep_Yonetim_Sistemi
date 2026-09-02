@@ -7,14 +7,16 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
+import { Message } from 'primereact/message';
 import { Ticket, WorkLog } from '@/layout/context/TicketContext';
+import { CATEGORY_DATA, BARCODE_OPTIONS } from '@/constants/newTicketOptions';
 
 export interface TicketEditModalProps {
   visible: boolean;
   ticket: Ticket | null;
   onHide: () => void;
   onSave: (updatedData: Partial<Ticket>) => void;
-  footer?: React.ReactNode;
+  footer?: React.ReactNode | ((save: () => void) => React.ReactNode);
   onOpenWorkLog?: () => void;
 }
 
@@ -37,25 +39,36 @@ interface EditFormState {
   workLogs: WorkLog[];
 }
 
-const categoryTree: Record<string, string[]> = {
-  'AĞ / İNTERNET': ['İnternet Erişimi & Filtre', 'VPN Bağlantısı', 'Wi-Fi / Kablosuz Ağ', 'IP / Port Talebi'],
-  'DONANIM / ÇEVRE BİRİMLERİ': ['Kasa / Monitör Arızası', 'Klavye / Mouse Değişimi', 'RAM / Disk Arızası', 'Donanım Temini'],
-  'YAZILIM / İŞLETİM SİSTEMİ': ['İşletim Sistemi Hatası', 'Ofis / Lisans Programları', 'Kurumsal Portal / Web', 'Yazılım Kurulumu'],
-  'YAZICI / TARAYICI': ['Toner Değişimi', 'Ağ Yazıcısı Tanımlama', 'Donanım / Kağıt Sıkışması'],
-  'E-POSTA / HESAP': ['Şifre Sıfırlama', 'Yeni Hesap Açılışı', 'E-posta Kota Artırımı', 'Yetkilendirme'],
-};
+// KURAL: Kategori ağacı artık burada ayrıca tanımlanmıyor. "Yeni Talep" formuyla
+// (useNewTicketForm.ts) AYNI kaynak olan constants/newTicketOptions.ts -> CATEGORY_DATA
+// kullanılıyor. Böylece düzenleme sayfası, talep oluşturma sayfasındaki 12 ana kategori
+// ve alt kategorileriyle her zaman birebir uyumlu kalır; iki ayrı/eksik liste sorunu ortadan kalkar.
+const categoryTree = CATEGORY_DATA;
 
 const mainCategoryOptions = Object.keys(categoryTree).map((key) => ({ label: key, value: key }));
 const priorityOptions: Ticket['priority'][] = ['Düşük', 'Normal', 'Yüksek', 'Kritik'];
 
 const createInitialForm = (ticket: Ticket | null): EditFormState => {
-  const category = ticket?.category || 'AĞ / İNTERNET';
-  const matchedMainCat = Object.keys(categoryTree).find((key) => category.toUpperCase().includes(key.split(' ')[0])) || 'AĞ / İNTERNET';
+  const defaultCategory = Object.keys(categoryTree)[0] || '';
+
+  // KURAL: "Yeni Talep" formunda seçilen gerçek kategori VE alt kategori
+  // ticket.category alanına değil, talep başlığının başına
+  // `[KATEGORI] AltKategori` biçiminde yazılıyor (bkz. useNewTicketForm.ts).
+  // ticket.category her zaman sadece 4 genel kategoriden birine ("Donanım/Arıza" vb.)
+  // sıkıştırılmış durumda olduğundan güvenilir değildir — bu yüzden asıl kategori ve
+  // alt kategoriyi önce başlıktan okumayı deniyoruz.
+  const titleBracketMatch = ticket?.title?.match(/^\[([^\]]+)\]\s*(.*)$/);
+  const rawCategory = (titleBracketMatch?.[1] || ticket?.category || defaultCategory).trim();
+  const rawSubCategory = (titleBracketMatch?.[2] || '').trim();
+
+  const matchedMainCat =
+    Object.keys(categoryTree).find((key) => key.toUpperCase() === rawCategory.toUpperCase()) || defaultCategory;
   const availableSubs = categoryTree[matchedMainCat] || [];
+  const matchedSubCat = availableSubs.find((sub) => sub === rawSubCategory) || availableSubs[0] || '';
 
   return {
     category: matchedMainCat,
-    subCategory: availableSubs[0] || '',
+    subCategory: matchedSubCat,
     priority: ticket?.priority || 'Normal',
     description: ticket?.description || '',
     requester: ticket?.requester || 'Bilinmeyen Kullanıcı',
@@ -75,10 +88,16 @@ const createInitialForm = (ticket: Ticket | null): EditFormState => {
 
 export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpenWorkLog }: TicketEditModalProps) => {
   const [editForm, setEditForm] = useState<EditFormState>(createInitialForm(ticket));
+  // Yazdırma öncesi "kaydedilmemiş değişiklik var mı" kontrolü için son kaydedilen/yüklenen halin anlık görüntüsü
+  const [savedSnapshot, setSavedSnapshot] = useState<string>('');
+  const [showUnsavedPrintWarning, setShowUnsavedPrintWarning] = useState(false);
 
   useEffect(() => {
     if (!ticket) {
-      setEditForm(createInitialForm(null));
+      const emptyForm = createInitialForm(null);
+      setEditForm(emptyForm);
+      setSavedSnapshot(JSON.stringify(emptyForm));
+      setShowUnsavedPrintWarning(false);
       return;
     }
 
@@ -107,7 +126,7 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
       cleanDescription = '';
     }
 
-    setEditForm({
+    const nextForm: EditFormState = {
       ...baseForm,
       description: cleanDescription,
       ulasilacakDahiliNo: extractedDahili,
@@ -115,14 +134,42 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
       odaNo: extractedOda,
       workLogs: ticket.workLogs || [],
       attachedFiles: ticket.attachedFiles || [],
-    });
+    };
+
+    // Form yüklendiği/dialog açıldığı an, bu hali "kaydedilmiş/temiz" durum olarak
+    // aynı anda işaretliyoruz — ayrı bir effect'te yapılırsa bir render gecikmesi
+    // yüzünden dialog her açıldığında yanlışlıkla "kaydedilmedi" uyarısı tetiklenir.
+    setEditForm(nextForm);
+    setSavedSnapshot(JSON.stringify(nextForm));
+    setShowUnsavedPrintWarning(false);
   }, [ticket, visible]);
 
-  const shouldShowBarkodNo = /YAZICI|DONANIM/i.test(editForm.category || '');
+  const isDirty = JSON.stringify(editForm) !== savedSnapshot;
+
+  const shouldShowBarkodNo = /YAZICI/i.test(editForm.category || '');
+
+  // KURAL: "Yeni Talep" formu (useNewTicketForm.ts) gerçek kategoriyi ticket.category'ye
+  // değil başlığa yazıyor; ticket.category alanına HER ZAMAN şu 4 genel değerden biri
+  // gidiyor (süreç-takibi sayfası ve uzman atama mantığı bu 4 değeri bekliyor).
+  // Burada kaydederken de aynı kuralı uyguluyoruz; aksi halde kaydettiğimiz an
+  // ticket.category'yi gerçek (12'li) kategoriyle ezip süreç-takibi filtrelerini kırarız.
+  const LEGACY_CATEGORY_BUCKETS = ['Donanım/Arıza', 'Yazılım/Erişim', 'İdari Hizmet', 'Güvenlik'] as const;
+  const toLegacyCategoryBucket = (realCategory: string): Ticket['category'] =>
+    (LEGACY_CATEGORY_BUCKETS as readonly string[]).includes(realCategory) ? (realCategory as Ticket['category']) : 'Donanım/Arıza';
 
   const handleSave = () => {
+    // KURAL: Gerçek kategori/alt kategori başlıktaki `[KATEGORI] AltKategori` önekinden
+    // okunduğu için, kullanıcı düzenleme ekranında kategoriyi değiştirirse bu değişikliğin
+    // kalıcı olması adına başlığı da güncelliyoruz — ama SADECE ticket zaten bu önekle
+    // oluşturulmuşsa (yani "Yeni Talep" formundan gelmişse). Eski/önekesiz başlıklara
+    // dokunmuyoruz ki farklı bir görünüm/rapor mantığını bozmayalım.
+    const hadBracketTitle = /^\[([^\]]+)\]/.test(ticket?.title || '');
+    const titleRest = (ticket?.title || '').replace(/^\[([^\]]+)\]\s*/, '');
+    const updatedTitle = hadBracketTitle ? `[${editForm.category}] ${editForm.subCategory || titleRest}` : ticket?.title;
+
     const partialUpdate: Partial<Ticket> = {
-      category: editForm.category,
+      title: updatedTitle,
+      category: toLegacyCategoryBucket(editForm.category),
       priority: editForm.priority,
       requester: editForm.requester,
       description: editForm.description,
@@ -138,16 +185,42 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
       workLogs: editForm.workLogs,
     };
 
+    // Kaydet'e basıldığı an bu hali "temiz" (kaydedilmiş) kabul ediyoruz;
+    // böylece Yazdır butonu artık engellenmez.
+    setSavedSnapshot(JSON.stringify(editForm));
+    setShowUnsavedPrintWarning(false);
     onSave(partialUpdate);
   };
 
+  const handlePrintClick = () => {
+    if (isDirty) {
+      setShowUnsavedPrintWarning(true);
+      return;
+    }
+    window.print();
+  };
+
+  const renderedFooter = typeof footer === 'function' ? footer(handleSave) : footer;
+
   return (
     <Dialog
-      header="Talep Yönetim & Düzenleme"
+      header={
+        <div className="flex align-items-center justify-content-between pr-4">
+          <span>Talep Yönetim & Düzenleme</span>
+          <Button
+            label="Yazdır"
+            icon="pi pi-print"
+            size="small"
+            severity="secondary"
+            outlined
+            onClick={handlePrintClick}
+          />
+        </div>
+      }
       visible={visible}
-      style={{ width: '850px', maxWidth: '95vw' }}
+      style={{ width: '1100px', maxWidth: '95vw' }}
       dismissableMask
-      footer={footer ?? (
+      footer={renderedFooter ?? (
         <div className="flex justify-content-end gap-2">
           <Button label="İptal" severity="secondary" onClick={onHide} />
           <Button label="Kaydet" severity="success" icon="pi pi-save" onClick={handleSave} />
@@ -156,6 +229,13 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
       onHide={onHide}
     >
       <div className="flex flex-column gap-3 py-2">
+        {showUnsavedPrintWarning && isDirty && (
+          <Message
+            severity="warn"
+            className="w-full"
+            text="Değişiklikleriniz henüz kaydedilmedi. Çıktı alabilmek için önce aşağıdaki 'Kaydet' butonuyla değişiklikleri kaydedin ya da 'İptal' ile vazgeçin."
+          />
+        )}
         <div className="surface-card p-3 border-round border-1 surface-border">
           <span className="text-xs font-bold text-600 uppercase tracking-wider block mb-3 text-primary">TALEP EDEN BİLGİLERİ</span>
           <div className="grid grid-nogutter gap-3">
@@ -179,7 +259,7 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
         </div>
 
         <div className="surface-card p-3 border-round border-1 surface-border">
-          <span className="text-xs font-bold text-600 uppercase tracking-wider block mb-3 text-primary">KATEGORİLER</span>
+          <span className="text-xs font-bold text-600 uppercase tracking-wider block mb-3 text-primary">İLGİLİ EKİP</span>
           <div className="grid">
             <div className="col-12 md:col-5">
               <label className="text-sm font-semibold text-700 block mb-1">Ana Talep Grubu</label>
@@ -218,7 +298,7 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
         <div className="surface-card p-3 border-round border-1 surface-border">
           <span className="text-xs font-bold text-600 uppercase tracking-wider block mb-3 text-primary">TALEP BİLGİLERİ</span>
           <div className="grid formgrid p-fluid">
-            <div className="field col-12 md:col-3">
+            <div className="field col-12 md:col-4">
               <label className="text-sm font-semibold text-700">Bilgisayar Adı</label>
               <InputText value={editForm.computerName} disabled />
             </div>
@@ -234,11 +314,16 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
               />
             </div>
             {shouldShowBarkodNo && (
-              <div className="field col-12 md:col-2">
+              <div className="field col-12 md:col-3">
                 <label className="text-sm font-semibold text-700">Cihaz Barkod No</label>
-                <InputText
+                <Dropdown
                   value={editForm.barkodNo}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, barkodNo: e.target.value }))}
+                  options={BARCODE_OPTIONS}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, barkodNo: e.value }))}
+                  placeholder="Barkod Seçiniz"
+                  filter
+                  showClear
+                  className="w-full"
                 />
               </div>
             )}
