@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTickets, Ticket, WorkLog } from '@/layout/context/TicketContext';
+import { useTickets, Ticket } from '@/layout/context/TicketContext';
 import { useUser } from '@/layout/context/UserContext';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { InputText } from 'primereact/inputtext';
@@ -13,16 +12,16 @@ import { Dropdown } from 'primereact/dropdown';
 import { Message } from 'primereact/message';
 import TicketHistoryModal from '@/app/components/ticket/TicketHistoryModal';
 import TicketActionReasonModal from '@/app/components/ticket/TicketActionReasonModal';
-import WorkLogApprovalModal from '@/app/components/ticket/WorkLogApprovalModal';
+import { StatusBadge } from '@/app/components/ui/StatusBadge';
+import { WorkLogApprovalButton } from '@/components/tickets/WorkLogApprovalButton';
 
 const TaleplerimPage = () => {
-    const { tickets, confirmTicket, assignTicket, updateTicket, requestWorkLogApproval, resolveWorkLogApproval, isLoading, loadError } = useTickets();
+    const { tickets, confirmTicket, isLoading, loadError } = useTickets();
     const { currentUser } = useUser();
-    
+
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
     const [dialogVisible, setDialogVisible] = useState(false);
     const [actionReasonModalVisible, setActionReasonModalVisible] = useState(false);
-    const [workLogApprovalVisible, setWorkLogApprovalVisible] = useState(false);
     const [actionType, setActionType] = useState<'release' | 'complete'>('release');
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -36,17 +35,10 @@ const TaleplerimPage = () => {
         return requester === activeUser || requester.startsWith(activeUser);
     });
 
-    const pendingWorkLogsForCurrentUser = tickets.reduce<Array<{ ticketId: string; ticketTitle: string; workLog: WorkLog }>>((acc, ticket) => {
-        const pendingLogs = (ticket.pendingWorkLogs || []).filter((log) => log.fullName === currentUser.fullName && log.status === 'PENDING');
-        pendingLogs.forEach((log) => {
-            acc.push({ ticketId: ticket.id, ticketTitle: ticket.title, workLog: log });
-        });
-        return acc;
-    }, []);
-
     const filteredTickets = myCreatedTickets.filter((ticket) => {
         const query = search.trim().toLocaleLowerCase('tr-TR');
-        const matchesSearch = !query || 
+        const matchesSearch =
+            !query ||
             ticket.id.toLocaleLowerCase('tr-TR').includes(query) ||
             ticket.title.toLocaleLowerCase('tr-TR').includes(query) ||
             ticket.category.toLocaleLowerCase('tr-TR').includes(query);
@@ -55,23 +47,6 @@ const TaleplerimPage = () => {
 
         return matchesSearch && matchesStatus;
     });
-
-    const getStatusBadge = (status: Ticket['status']) => {
-        switch (status) {
-            case 'YENİ':
-                return <Tag value="YENİ" severity="info" />;
-            case 'İŞLEMDE':
-                return <Tag value="İŞLEMDE" severity="warning" />;
-            case 'ONAY_BEKLİYOR':
-                return <Tag value="ONAY BEKLİYOR" className="bg-purple-600 text-white font-semibold" />;
-            case 'KAPATILDI':
-                return <Tag value="KAPATILDI" severity="success" />;
-            case 'REDDEDİLDİ':
-                return <Tag value="REDDEDİLDİ" severity="danger" />;
-            default:
-                return null;
-        }
-    };
 
     const actionBodyTemplate = (rowData: Ticket) => {
         return (
@@ -114,37 +89,6 @@ const TaleplerimPage = () => {
         setDialogVisible(true);
     };
 
-    const handleAssignAction = async (action: 'assign' | 'accept' | 'reject' | 'close', payload?: { ticketId?: string | null; technician?: string; message?: string }) => {
-        if (action === 'close') {
-            setDialogVisible(false);
-            return;
-        }
-
-        if (action === 'assign' && payload?.ticketId && payload.technician) {
-            await assignTicket(payload.ticketId, payload.technician, currentUser.fullName, currentUser.role, payload.message);
-        }
-    };
-
-    const handleWorkLogAction = async (action: 'addWorkLog' | 'requestApproval' | 'close', payload?: { workLog?: WorkLog; ticketId?: string | null }) => {
-        if (action === 'close') {
-            setDialogVisible(false);
-            return;
-        }
-
-        if (action === 'requestApproval' && payload?.workLog && payload.ticketId) {
-            await requestWorkLogApproval(payload.ticketId, payload.workLog);
-            setDialogVisible(false);
-            return;
-        }
-
-        if (action === 'addWorkLog' && payload?.workLog && payload.ticketId) {
-            const ticket = tickets.find((item) => item.id === payload.ticketId);
-            if (!ticket) return;
-            await updateTicket(payload.ticketId, { workLogs: [...(ticket.workLogs || []), payload.workLog] }, currentUser.fullName);
-            setDialogVisible(false);
-        }
-    };
-
     const handleRelease = async (ticketId: string, message?: string) => {
         await confirmTicket(ticketId, false, currentUser.fullName);
         setActionReasonModalVisible(false);
@@ -158,40 +102,45 @@ const TaleplerimPage = () => {
     return (
         <div className="grid">
             <div className="col-12">
-                <Card 
-                    title={<div className="flex justify-content-between align-items-center gap-2"><span>Açtığım Resmi Talepler</span><Button label="Mesai Onayları" icon="pi pi-check-circle" severity={pendingWorkLogsForCurrentUser.length > 0 ? 'info' : 'secondary'} badge={pendingWorkLogsForCurrentUser.length > 0 ? pendingWorkLogsForCurrentUser.length.toString() : undefined} badgeClassName="p-badge-info" onClick={() => setWorkLogApprovalVisible(true)} /></div>}
+                <Card
+                    title={
+                        <div className="flex justify-content-between align-items-center gap-2">
+                            <span>Açtığım Resmi Talepler</span>
+                            <WorkLogApprovalButton />
+                        </div>
+                    }
                     subTitle={`Sayın ${currentUser.fullName}, sadece sizin tarafınızdan oluşturulan talepler listelenmektedir.`}
                 >
                     {isLoading && <Message severity="info" className="w-full mb-3" text="Talepler yükleniyor..." />}
                     {loadError && <Message severity="warn" className="w-full mb-3" text={loadError} />}
-                    
+
                     <div className="flex flex-wrap gap-2 mb-3">
                         <span className="p-input-icon-left w-full md:w-25rem">
                             <i className="pi pi-search text-primary" />
-                            <InputText 
-                                value={search} 
-                                onChange={(e) => setSearch(e.target.value)} 
-                                placeholder="Taleplerim'de Arayın..." 
+                            <InputText
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Taleplerim'de Arayın..."
                                 className="w-full"
                                 tooltip="Talep numarası başlık veya Kategori başlıklarına göre anlık arama yapar"
                                 tooltipOptions={{ position: 'bottom' }}
                             />
                         </span>
-                        
-                        <Dropdown 
-                            value={statusFilter} 
-                            options={['YENİ', 'İŞLEMDE', 'ONAY_BEKLİYOR', 'KAPATILDI', 'REDDEDİLDİ']} 
-                            onChange={(e) => setStatusFilter(e.value)} 
-                            placeholder="Durum Filtresi" 
-                            showClear 
+
+                        <Dropdown
+                            value={statusFilter}
+                            options={['YENİ', 'İŞLEMDE', 'ONAY_BEKLİYOR', 'KAPATILDI', 'REDDEDİLDİ']}
+                            onChange={(e) => setStatusFilter(e.value)}
+                            placeholder="Durum Filtresi"
+                            showClear
                         />
                     </div>
 
-                    <DataTable 
-                        value={filteredTickets} 
-                        paginator 
-                        rows={10} 
-                        responsiveLayout="scroll" 
+                    <DataTable
+                        value={filteredTickets}
+                        paginator
+                        rows={10}
+                        responsiveLayout="scroll"
                         emptyMessage="Açtığınız herhangi bir aktif talep bulunmamaktadır."
                         onRowClick={(event) => openTicketHistory(event.data as Ticket)}
                         rowClassName={() => 'cursor-pointer hover:surface-hover'}
@@ -200,11 +149,11 @@ const TaleplerimPage = () => {
                         <Column field="title" header="Talep Başlığı" />
                         <Column field="category" header="Kategori" style={{ width: '150px' }} />
                         <Column field="priority" header="Aciliyet" style={{ width: '100px' }} />
-                        <Column 
-                            field="status" 
-                            header="Durum" 
-                            style={{ width: '160px' }} 
-                            body={(rowData: Ticket) => getStatusBadge(rowData.status)} 
+                        <Column
+                            field="status"
+                            header="Durum"
+                            style={{ width: '160px' }}
+                            body={(rowData: Ticket) => <StatusBadge status={rowData.status} />}
                         />
                         <Column field="assignee" header="Atanan Uzman" body={(r: Ticket) => r.assignee || 'Henüz Atanmadı'} />
                         <Column field="createdAt" header="Tarih" style={{ width: '150px' }} />
@@ -231,18 +180,6 @@ const TaleplerimPage = () => {
                         void handleRelease(selectedTicket.id, messageText);
                     } else {
                         void handleComplete(selectedTicket.id, messageText);
-                    }
-                }}
-            />
-
-            <WorkLogApprovalModal
-                visible={workLogApprovalVisible}
-                pendingData={pendingWorkLogsForCurrentUser}
-                onHide={() => setWorkLogApprovalVisible(false)}
-                onResolve={async (ticketId, logId, isApproved) => {
-                    const success = await resolveWorkLogApproval(ticketId, logId, isApproved);
-                    if (success) {
-                        setWorkLogApprovalVisible(false);
                     }
                 }}
             />

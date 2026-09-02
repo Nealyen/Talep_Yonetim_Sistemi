@@ -15,12 +15,14 @@ export type TicketStatus =
 
 type StatusSeverity = 'success' | 'info' | 'warning' | 'danger' | null;
 
-const statusConfig: Record<string, { label: string; severity: StatusSeverity }> = {
+const statusConfig: Record<string, { label: string; severity: StatusSeverity; className?: string }> = {
   YENİ: { label: 'YENİ', severity: 'info' },
   İNCELEMEDE: { label: 'İNCELEMEDE', severity: 'info' },
   İŞLEMDE: { label: 'İŞLEMDE', severity: 'warning' },
   ATAMA_BEKLİYOR: { label: 'ATAMA BEKLİYOR', severity: 'warning' },
-  ONAY_BEKLİYOR: { label: 'ONAY BEKLİYOR', severity: null },
+  // Severity 'null' PrimeReact'te varsayılan gri renk verir; sayfalarda tutarlı biçimde
+  // kullanılan mor rozeti burada merkezi olarak koruyoruz.
+  ONAY_BEKLİYOR: { label: 'ONAY BEKLİYOR', severity: null, className: 'bg-purple-600 text-white' },
   KAPATILDI: { label: 'KAPATILDI', severity: 'success' },
   REDDEDİLDİ: { label: 'REDDEDİLDİ', severity: 'danger' },
   HAVUZDA: { label: 'HAVUZDA', severity: 'info' },
@@ -42,8 +44,9 @@ type StatusBadgeProps = {
 
 export const StatusBadge = ({ status, className }: StatusBadgeProps) => {
   const meta = getStatusMeta(status);
+  const mergedClassName = [meta.className, className].filter(Boolean).join(' ') || undefined;
 
-  return <Tag value={meta.label} severity={meta.severity} className={className} />;
+  return <Tag value={meta.label} severity={meta.severity} className={mergedClassName} />;
 };
 
 export default StatusBadge;
