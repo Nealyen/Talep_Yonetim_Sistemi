@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
@@ -9,15 +9,25 @@ import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import { Message } from 'primereact/message';
 import { Ticket, WorkLog } from '@/layout/context/TicketContext';
+import { useUser } from '@/layout/context/UserContext';
 import { CATEGORY_DATA, BARCODE_OPTIONS } from '@/constants/newTicketOptions';
+import TicketWorkLogModal from '@/app/components/ticket/TicketWorkLogModal';
 
 export interface TicketEditModalProps {
   visible: boolean;
   ticket: Ticket | null;
   onHide: () => void;
   onSave: (updatedData: Partial<Ticket>) => void;
-  footer?: React.ReactNode | ((save: () => void) => React.ReactNode);
-  onOpenWorkLog?: () => void;
+  footer?: React.ReactNode;
+}
+
+// KURAL: Bazı sayfalar (örn. uzman-aktif-gorevler) kendi özel footer'ını (ör. "Havuza
+// Bırak", "Devret" butonlarıyla birlikte) geçiriyor ve modalın kendi dahili "Kaydet"
+// butonunu göstermiyor. O sayfalarda kaydetmeyi tetiklemek için dışarıdan çağrılabilen
+// bu handle kullanılıyor — aksi halde dışarıdaki "Değişiklikleri Kaydet" butonu formdaki
+// gerçek verilere hiç erişemez ve hiçbir şey kaydedilmez.
+export interface TicketEditModalHandle {
+  triggerSave: () => void;
 }
 
 interface EditFormState {
@@ -86,7 +96,13 @@ const createInitialForm = (ticket: Ticket | null): EditFormState => {
   };
 };
 
-export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpenWorkLog }: TicketEditModalProps) => {
+export const TicketEditModal = forwardRef<TicketEditModalHandle, TicketEditModalProps>(({ visible, ticket, onHide, onSave, footer }, ref) => {
+  const { currentUser, users } = useUser();
+  // KURAL: Mesai kaydı eklerken/düzenlerken personel listesi ve "kimin adına"
+  // sorusu için ihtiyaç duyulan bilgiler; sayfa bazında ayrıca prop geçmeye
+  // gerek kalmasın diye modal doğrudan UserContext'ten okuyor.
+  const eligibleTechnicians = users.filter((u) => u.role === 'TEKNISYEN' || u.role === 'ADMIN' || u.role === 'KOORDINATOR');
+
   const [editForm, setEditForm] = useState<EditFormState>(createInitialForm(ticket));
   // Yazdırma öncesi "kaydedilmemiş değişiklik var mı" kontrolü için son kaydedilen/yüklenen halin anlık görüntüsü
   const [savedSnapshot, setSavedSnapshot] = useState<string>('');
@@ -192,6 +208,47 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
     onSave(partialUpdate);
   };
 
+  useImperativeHandle(ref, () => ({
+    triggerSave: handleSave,
+  }));
+
+  // KURAL: Mesai onay mekanizması tamamen kaldırıldı. "Mesai Ekle" artık ayrı bir
+  // sayfaya/hook'a bağımlı değil; bu modalın kendi içinde yönetiliyor. Eklenen/
+  // düzenlenen/silinen kayıtlar SADECE editForm.workLogs (yerel form state) üzerinde
+  // değişir — hiçbir şey context'e/localStorage'a hemen yazılmaz. Kalıcı olması için
+  // kullanıcının ana "Kaydet" butonuna basması gerekir (handleSave zaten
+  // editForm.workLogs'u partialUpdate içine koyuyor).
+  const [workLogModalVisible, setWorkLogModalVisible] = useState(false);
+  const [editingWorkLog, setEditingWorkLog] = useState<WorkLog | null>(null);
+  const [pendingDeleteLogId, setPendingDeleteLogId] = useState<string | null>(null);
+
+  const openAddWorkLog = () => {
+    setEditingWorkLog(null);
+    setWorkLogModalVisible(true);
+  };
+
+  const openEditWorkLog = (log: WorkLog) => {
+    setEditingWorkLog(log);
+    setWorkLogModalVisible(true);
+  };
+
+  const handleWorkLogSave = (log: WorkLog) => {
+    setEditForm((prev) => {
+      const exists = prev.workLogs.some((item) => item.id === log.id);
+      const nextWorkLogs = exists ? prev.workLogs.map((item) => (item.id === log.id ? log : item)) : [...prev.workLogs, log];
+      return { ...prev, workLogs: nextWorkLogs };
+    });
+    setWorkLogModalVisible(false);
+    setEditingWorkLog(null);
+  };
+
+  const requestDeleteWorkLog = (log: WorkLog) => setPendingDeleteLogId(log.id);
+  const cancelDeleteWorkLog = () => setPendingDeleteLogId(null);
+  const confirmDeleteWorkLog = () => {
+    setEditForm((prev) => ({ ...prev, workLogs: prev.workLogs.filter((item) => item.id !== pendingDeleteLogId) }));
+    setPendingDeleteLogId(null);
+  };
+
   const handlePrintClick = () => {
     if (isDirty) {
       setShowUnsavedPrintWarning(true);
@@ -200,9 +257,27 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
     window.print();
   };
 
-  const renderedFooter = typeof footer === 'function' ? footer(handleSave) : footer;
+  // KURAL: Pencereyi kapatırken (İptal, X, dışarı tıklama veya ESC) kaydedilmemiş
+  // değişiklik varsa doğrudan kapatmak yerine önce onay istiyoruz. Önceden "isDirty"
+  // sadece Yazdır butonunda kontrol ediliyordu; kapatma tamamen kontrolsüzdü ve
+  // yapılan hiçbir uyarı olmadan sessizce kayboluyordu.
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  const requestClose = () => {
+    if (isDirty) {
+      setShowExitConfirm(true);
+      return;
+    }
+    onHide();
+  };
+
+  const discardAndClose = () => {
+    setShowExitConfirm(false);
+    onHide();
+  };
 
   return (
+    <>
     <Dialog
       header={
         <div className="flex align-items-center justify-content-between pr-4">
@@ -220,13 +295,13 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
       visible={visible}
       style={{ width: '1100px', maxWidth: '95vw' }}
       dismissableMask
-      footer={renderedFooter ?? (
+      footer={footer ?? (
         <div className="flex justify-content-end gap-2">
-          <Button label="İptal" severity="secondary" onClick={onHide} />
+          <Button label="İptal" severity="secondary" onClick={requestClose} />
           <Button label="Kaydet" severity="success" icon="pi pi-save" onClick={handleSave} />
         </div>
       )}
-      onHide={onHide}
+      onHide={requestClose}
     >
       <div className="flex flex-column gap-3 py-2">
         {showUnsavedPrintWarning && isDirty && (
@@ -259,7 +334,7 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
         </div>
 
         <div className="surface-card p-3 border-round border-1 surface-border">
-          <span className="text-xs font-bold text-600 uppercase tracking-wider block mb-3 text-primary">İLGİLİ EKİP</span>
+          <span className="text-xs font-bold text-600 uppercase tracking-wider block mb-3 text-primary">KATEGORİLER</span>
           <div className="grid">
             <div className="col-12 md:col-5">
               <label className="text-sm font-semibold text-700 block mb-1">Ana Talep Grubu</label>
@@ -368,25 +443,80 @@ export const TicketEditModal = ({ visible, ticket, onHide, onSave, footer, onOpe
         <div className="surface-card p-3 border-round border-1 surface-border">
           <div className="flex justify-content-between align-items-center mb-3">
             <span className="text-xs font-bold text-600 uppercase tracking-wider text-primary">MESAİ / ÇALIŞMA SÜRESİ KAYITLARI</span>
-            <Button label="Mesai Ekle" icon="pi pi-plus" size="small" severity="secondary" outlined onClick={onOpenWorkLog} />
+            <Button label="Mesai Ekle" icon="pi pi-plus" size="small" severity="secondary" outlined onClick={openAddWorkLog} />
           </div>
 
           <DataTable value={editForm.workLogs} emptyMessage="Henüz bir mesai kaydı bulunmamaktadır." size="small" className="p-datatable-sm" responsiveLayout="scroll">
-            <Column field="fullName" header="Ad Soyad" style={{ width: '22%' }} />
-            <Column field="sicilNo" header="Sicil No" style={{ width: '18%' }} />
-            <Column field="startDate" header="Başlangıç Tarihi" style={{ width: '20%' }} />
-            <Column field="endDate" header="Bitiş Tarihi" style={{ width: '20%' }} />
+            <Column field="fullName" header="Ad Soyad" style={{ width: '20%' }} />
+            <Column field="sicilNo" header="Sicil No" style={{ width: '14%' }} />
+            <Column field="startDate" header="Başlangıç Tarihi" style={{ width: '18%' }} />
+            <Column field="endDate" header="Bitiş Tarihi" style={{ width: '18%' }} />
             <Column
               field="durationStr"
               header="Mesai Süresi"
-              style={{ width: '20%' }}
+              style={{ width: '15%' }}
               body={(row: WorkLog) => <span className="font-semibold text-primary">{row.durationStr}</span>}
+            />
+            <Column
+              header="İşlemler"
+              style={{ width: '15%' }}
+              body={(row: WorkLog) => (
+                <div className="flex gap-2">
+                  <Button icon="pi pi-pencil" rounded outlined size="small" severity="secondary" tooltip="Düzenle" onClick={() => openEditWorkLog(row)} />
+                  <Button icon="pi pi-trash" rounded outlined size="small" severity="danger" tooltip="Sil" onClick={() => requestDeleteWorkLog(row)} />
+                </div>
+              )}
             />
           </DataTable>
         </div>
       </div>
     </Dialog>
+
+    <TicketWorkLogModal
+      visible={workLogModalVisible}
+      ticket={ticket}
+      currentUser={currentUser}
+      eligibleTechnicians={eligibleTechnicians}
+      editingLog={editingWorkLog}
+      onHide={() => {
+        setWorkLogModalVisible(false);
+        setEditingWorkLog(null);
+      }}
+      onSave={handleWorkLogSave}
+    />
+
+    <Dialog
+      visible={!!pendingDeleteLogId}
+      onHide={cancelDeleteWorkLog}
+      header="Mesai Kaydını Sil"
+      style={{ width: '420px', maxWidth: '95vw' }}
+    >
+      <p className="m-0 mb-3">
+        Bu mesai kaydını silmek istediğinize emin misiniz? Bu işlem, ana <strong>&quot;Kaydet&quot;</strong> butonuna basıldığında kalıcı olacaktır.
+      </p>
+      <div className="flex justify-content-end gap-2">
+        <Button label="Vazgeç" severity="secondary" onClick={cancelDeleteWorkLog} />
+        <Button label="Evet, Sil" severity="danger" icon="pi pi-trash" onClick={confirmDeleteWorkLog} />
+      </div>
+    </Dialog>
+    <Dialog
+      visible={showExitConfirm}
+      onHide={() => setShowExitConfirm(false)}
+      header="Kaydedilmemiş Değişiklikler"
+      style={{ width: '440px', maxWidth: '95vw' }}
+    >
+      <p className="m-0 mb-3">
+        Bu talepte kaydedilmemiş değişiklikleriniz var (mesai kaydı, kategori, açıklama vb.). Kaydetmeden çıkarsanız bu değişiklikler kaybolacak. Yine de çıkmak istediğinize emin misiniz?
+      </p>
+      <div className="flex justify-content-end gap-2">
+        <Button label="Vazgeç, Düzenlemeye Devam Et" severity="secondary" onClick={() => setShowExitConfirm(false)} />
+        <Button label="Evet, Kaydetmeden Çık" severity="danger" icon="pi pi-sign-out" onClick={discardAndClose} />
+      </div>
+    </Dialog>
+    </>
   );
-};
+});
+
+TicketEditModal.displayName = 'TicketEditModal';
 
 export default TicketEditModal;

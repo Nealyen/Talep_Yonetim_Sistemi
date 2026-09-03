@@ -14,7 +14,7 @@ export interface ActiveTaskActionButtonsProps {
 
 /**
  * "Üzerimdeki Aktif Görevler" tablosundaki satır işlem butonları
- * (önizleme, tamamla, havuza iade, devret).
+ * (önizleme, tamamla, havuza iade, devret)
  */
 export const ActiveTaskActionButtons = ({ ticket, onPreview, onComplete, onRelease, onDelegate }: ActiveTaskActionButtonsProps) => (
     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>

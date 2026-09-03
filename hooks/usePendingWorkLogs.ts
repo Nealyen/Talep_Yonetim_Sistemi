@@ -11,9 +11,8 @@ export interface PendingWorkLogItem {
 }
 
 /**
- * Aktif kullanıcının onayını bekleyen mesai kayıtlarını döner.
- * Önceden her sayfada (tum-talepler, taleplerim, is-havuzu, uzman-aktif-gorevler)
- * ayrı ayrı kopyalanan bu hesaplama artık tek bir yerde yaşıyor.
+mesai kayır alanındaki verilerin db ye gitmeden önceki Geçici bekleme alanı
+
  */
 export const usePendingWorkLogs = (): PendingWorkLogItem[] => {
     const { tickets } = useTickets();

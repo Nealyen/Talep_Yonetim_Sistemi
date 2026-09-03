@@ -13,7 +13,6 @@ import { Message } from 'primereact/message';
 import TicketHistoryModal from '@/app/components/ticket/TicketHistoryModal';
 import TicketActionReasonModal from '@/app/components/ticket/TicketActionReasonModal';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
-import { WorkLogApprovalButton } from '@/components/tickets/WorkLogApprovalButton';
 
 const TaleplerimPage = () => {
     const { tickets, confirmTicket, isLoading, loadError } = useTickets();
@@ -106,7 +105,6 @@ const TaleplerimPage = () => {
                     title={
                         <div className="flex justify-content-between align-items-center gap-2">
                             <span>Açtığım Resmi Talepler</span>
-                            <WorkLogApprovalButton />
                         </div>
                     }
                     subTitle={`Sayın ${currentUser.fullName}, sadece sizin tarafınızdan oluşturulan talepler listelenmektedir.`}

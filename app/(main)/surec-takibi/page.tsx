@@ -125,7 +125,17 @@ const KoordinatorPage = () => {
                                                 size="small"
                                                 severity="danger"
                                                 outlined
-                                                onClick={() => unassignTicket(rowData.id)}
+                                                onClick={() => {
+                                                    confirmDialog({
+                                                        message: `[${rowData.id}] numaralı talebin, atanmış olan [${rowData.assignee || rowData.pendingAssignee}] ile ilişkisini kesmek istediğinize emin misiniz? Talep yeniden atanmayı bekleyen duruma geri döner.`,
+                                                        header: 'İlişkiyi Kesme Onayı',
+                                                        icon: 'pi pi-exclamation-triangle',
+                                                        acceptClassName: 'p-button-danger',
+                                                        acceptLabel: 'Evet, İlişkiyi Kes',
+                                                        rejectLabel: 'Vazgeç',
+                                                        accept: () => unassignTicket(rowData.id)
+                                                    });
+                                                }}
                                             />
                                         )}
                                     </div>

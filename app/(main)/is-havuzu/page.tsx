@@ -15,7 +15,6 @@ import { RoleRouteGuard } from '@/layout/RoleRouteGuard';
 import TicketHistoryModal from '@/app/components/ticket/TicketHistoryModal';
 import TicketActionReasonModal from '@/app/components/ticket/TicketActionReasonModal';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
-import { WorkLogApprovalButton } from '@/components/tickets/WorkLogApprovalButton';
 
 const IsHavuzuPage = () => {
     const { tickets, assignTicket, isLoading, loadError } = useTickets();
@@ -29,7 +28,9 @@ const IsHavuzuPage = () => {
     const [actionReasonModalVisible, setActionReasonModalVisible] = useState(false);
     const [actionType, setActionType] = useState<'release' | 'complete'>('release');
 
-    const isTechnician = currentUser.role === 'TEKNISYEN' || currentUser.role === 'ADMIN';
+    // KURAL: Koordinatör de teknisyen gibi havuzdaki işleri üzerine alabilir; salt okunur
+    // sadece işi fiilen üstlenemeyecek roller (ör. Çalışan/Talep Sahibi) için geçerlidir.
+    const isTechnician = currentUser.role === 'TEKNISYEN' || currentUser.role === 'ADMIN' || currentUser.role === 'KOORDINATOR';
 
     // KURAL: Havuzda yalnızca henüz kimseye atanmamış (boşta) ve 'YENİ' durumundaki açık talepler listelenir
     const unassignedTickets = tickets.filter((ticket) => !ticket.assignee && ticket.status === 'YENİ');
@@ -111,7 +112,6 @@ const IsHavuzuPage = () => {
                         title={
                             <div className="flex justify-content-between align-items-center gap-2">
                                 <span>Teknik Servis İş Havuzu</span>
-                                <WorkLogApprovalButton />
                             </div>
                         }
                         subTitle="Müdahale bekleyen ve henüz bir teknisyene atanmamış sahipsiz talepler."

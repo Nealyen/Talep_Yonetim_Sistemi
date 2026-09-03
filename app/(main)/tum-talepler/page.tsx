@@ -13,7 +13,6 @@ import TicketHistoryModal from '@/app/components/ticket/TicketHistoryModal';
 import TicketEditModal from '@/app/components/ticket/TicketEditModal';
 import TicketActionReasonModal from '@/app/components/ticket/TicketActionReasonModal';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
-import { WorkLogApprovalButton } from '@/components/tickets/WorkLogApprovalButton';
 
 const TumTaleplerPage = () => {
     const { tickets, assignTicket, updateTicket } = useTickets();
@@ -100,7 +99,6 @@ const TumTaleplerPage = () => {
                         title={
                             <div className="flex justify-content-between align-items-center gap-2">
                                 <span>Tüm Talepler (Genel İzleme Paneli)</span>
-                                <WorkLogApprovalButton />
                             </div>
                         }
                         subTitle={

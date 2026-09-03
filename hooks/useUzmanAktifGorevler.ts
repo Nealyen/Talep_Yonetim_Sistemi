@@ -5,25 +5,25 @@ import { Toast } from 'primereact/toast';
 import { confirmDialog } from 'primereact/confirmdialog';
 import { useTickets, Ticket } from '@/layout/context/TicketContext';
 import { useUser } from '@/layout/context/UserContext';
+import type { TicketEditModalHandle } from '@/app/components/ticket/TicketEditModal';
 
 export type ActionType = 'release' | 'complete';
 
 /**
- * "Üzerimdeki Aktif Görevler" sayfasının tüm state'i ve iş mantığı.
- * Önceden 366 satırlık page.tsx içine gömülüydü; artık page.tsx sadece
+ * "Üzerimdeki Aktif Görevler" sayfasının tüm işlevlerini yönetiyor
  * bu hook'u çağırıp component'leri diziyor.
  */
 export const useUzmanAktifGorevler = () => {
-    const { tickets, completeTicket, unassignTicket, assignTicket, respondToAssignment, updateTicket, requestWorkLogApproval } = useTickets();
+    const { tickets, completeTicket, unassignTicket, assignTicket, respondToAssignment, updateTicket } = useTickets();
     const { currentUser, users } = useUser();
     const toast = useRef<Toast>(null);
+    const editModalRef = useRef<TicketEditModalHandle>(null);
 
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
     const [dialogVisible, setDialogVisible] = useState(false);
     const [editDialogVisible, setEditDialogVisible] = useState(false);
     const [delegateDialogVisible, setDelegateDialogVisible] = useState(false);
     const [pendingDialogVisible, setPendingDialogVisible] = useState(false);
-    const [workLogDialogVisible, setWorkLogDialogVisible] = useState(false);
     const [actionReasonModalVisible, setActionReasonModalVisible] = useState(false);
     const [actionType, setActionType] = useState<ActionType>('release');
     const [targetTech, setTargetTech] = useState<string>('');
@@ -55,7 +55,7 @@ export const useUzmanAktifGorevler = () => {
     const handleSaveEdit = async (updatedData: Partial<Ticket>) => {
         if (!selectedTicket) return;
 
-        const success = await updateTicket(selectedTicket.id, updatedData, currentUser.fullName, currentUser.role);
+        const success = await updateTicket(selectedTicket.id, updatedData, currentUser.fullName);
         if (success) {
             toast.current?.show({ severity: 'success', summary: 'Kayıt Güncellendi', detail: 'Değişiklikler kaydedildi.', life: 3000 });
             setEditDialogVisible(false);
@@ -128,59 +128,12 @@ export const useUzmanAktifGorevler = () => {
         }
     };
 
-    const handleWorkLogAction = async (
-        action: 'addWorkLog' | 'requestApproval' | 'close',
-        payload?: { workLog?: import('@/layout/context/TicketContext').WorkLog; ticketId?: string | null }
-    ) => {
-        if (action === 'close') {
-            setWorkLogDialogVisible(false);
-            return;
-        }
-
-        if (action === 'requestApproval' && payload?.workLog && payload.ticketId) {
-            const success = await requestWorkLogApproval(payload.ticketId, payload.workLog);
-            if (success) {
-                toast.current?.show({ severity: 'info', summary: 'Onay İstendi', detail: 'Mesai kaydı onay için gönderildi.', life: 2500 });
-                setWorkLogDialogVisible(false);
-            }
-            return;
-        }
-
-        if (action === 'addWorkLog' && payload?.workLog && payload.ticketId) {
-            const currentTicket = tickets.find((ticket) => ticket.id === payload.ticketId);
-            if (!currentTicket) return;
-
-            const description = payload.workLog.description?.trim();
-            const success = await updateTicket(
-                payload.ticketId,
-                { workLogs: [...(currentTicket.workLogs || []), payload.workLog] },
-                currentUser.fullName
-            );
-
-            if (success) {
-                if (description) {
-                    const ticketWithLog = tickets.find((ticket) => ticket.id === payload.ticketId);
-                    if (ticketWithLog) {
-                        const updatedHistory = [
-                            ...ticketWithLog.history,
-                            { date: new Date().toLocaleString('tr-TR'), action: `Mesai kaydı eklendi. Açıklama: ${description}`, user: currentUser.fullName }
-                        ];
-                        await updateTicket(payload.ticketId, { history: updatedHistory }, currentUser.fullName);
-                    }
-                }
-
-                toast.current?.show({ severity: 'success', summary: 'Mesai Eklendi', detail: 'Mesai kaydı listeye eklendi.', life: 2000 });
-                setWorkLogDialogVisible(false);
-            }
-        }
-    };
-
     const onRowClick = (event: any) => openEditDialog(event.data as Ticket);
 
-    // NOT: Orijinal kodda bu buton yalnızca bir onay diyaloğu gösterir; kaydetme
-    // işlemi zaten TicketEditModal'ın kendi "Kaydet" akışıyla (handleSaveEdit) yapılıyor.
-    // Davranış birebir korunuyor.
-    const confirmSave = (save: () => void) => {
+    // onay sonrası modalın kendi
+    // triggerSave() metodu çağrılıyor; bu da tıpkı modalın dahili "Kaydet" butonuna
+    // basılmış gibi gerçek form verisini onSave (handleSaveEdit) üzerinden gönderiyor.
+    const confirmSave = () => {
         if (!selectedTicket) return;
         confirmDialog({
             message: 'Yapılan değişiklikleri kaydetmek istediğinize emin misiniz?',
@@ -190,13 +143,14 @@ export const useUzmanAktifGorevler = () => {
             rejectLabel: 'İptal',
             acceptClassName: 'p-button-success',
             accept: () => {
-                save();
+                editModalRef.current?.triggerSave();
             }
         });
     };
 
     return {
         toast,
+        editModalRef,
         currentUser,
         confirmSave,
         selectedTicket,
@@ -209,8 +163,6 @@ export const useUzmanAktifGorevler = () => {
         setDelegateDialogVisible,
         pendingDialogVisible,
         setPendingDialogVisible,
-        workLogDialogVisible,
-        setWorkLogDialogVisible,
         actionReasonModalVisible,
         setActionReasonModalVisible,
         actionType,
@@ -233,7 +185,6 @@ export const useUzmanAktifGorevler = () => {
         handleComplete,
         openCompleteReasonModal,
         handleAssignAction,
-        handleWorkLogAction,
         onRowClick
     };
 };

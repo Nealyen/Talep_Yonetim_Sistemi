@@ -19,8 +19,11 @@ export interface TicketWorkLogModalProps {
   ticket: Ticket | null;
   currentUser: { fullName: string };
   eligibleTechnicians: TicketWorkLogUser[];
+  // KURAL: Mesai onay mekanizması kaldırıldı. Bu alan dolu geldiğinde modal "düzenleme"
+  // moduna geçer (mevcut kaydın üzerine yazılır); boş/null geldiğinde yeni kayıt eklenir.
+  editingLog?: WorkLog | null;
   onHide: () => void;
-  onAction: (action: 'addWorkLog' | 'requestApproval' | 'close', payload?: { workLog?: WorkLog; ticketId?: string | null }) => void;
+  onSave: (workLog: WorkLog) => void;
 }
 
 export const TicketWorkLogModal = ({
@@ -28,10 +31,10 @@ export const TicketWorkLogModal = ({
   ticket,
   currentUser,
   eligibleTechnicians,
+  editingLog,
   onHide,
-  onAction,
+  onSave,
 }: TicketWorkLogModalProps) => {
-  const [isDifferentUser, setIsDifferentUser] = useState(false);
   const [selectedUser, setSelectedUser] = useState<TicketWorkLogUser>(currentUser as TicketWorkLogUser);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
@@ -40,8 +43,27 @@ export const TicketWorkLogModal = ({
   const [manualMins, setManualMins] = useState(0);
   const [description, setDescription] = useState('');
 
+  const isEditing = !!editingLog;
+
   useEffect(() => {
-    if (!visible || !ticket) return;
+    if (!visible) return;
+
+    if (editingLog) {
+      // Düzenleme modu: mevcut kaydın değerleriyle formu doldur.
+      setSelectedUser({ fullName: editingLog.fullName });
+      const parsedStart = parseTurkishDate(editingLog.startDate);
+      const parsedEnd = parseTurkishDate(editingLog.endDate);
+      setStartDate(parsedStart);
+      setEndDate(parsedEnd);
+      const calc = calculateBusinessTime(parsedStart, parsedEnd);
+      setManualDays(calc.days);
+      setManualHours(calc.hours);
+      setManualMins(calc.mins);
+      setDescription(editingLog.description || '');
+      return;
+    }
+
+    if (!ticket) return;
 
     const history = ticket.history || [];
     const userHistory = history.filter((h) => h.user === currentUser.fullName);
@@ -49,7 +71,6 @@ export const TicketWorkLogModal = ({
     const calculatedEndDate = new Date();
     const calc = calculateBusinessTime(assignmentDate, calculatedEndDate);
 
-    setIsDifferentUser(false);
     setSelectedUser(currentUser as TicketWorkLogUser);
     setStartDate(assignmentDate);
     setEndDate(calculatedEndDate);
@@ -57,7 +78,7 @@ export const TicketWorkLogModal = ({
     setManualHours(calc.hours);
     setManualMins(calc.mins);
     setDescription('');
-  }, [visible, ticket, currentUser]);
+  }, [visible, ticket, currentUser, editingLog]);
 
   const durationParts = useMemo(() => {
     const parts: string[] = [];
@@ -71,6 +92,10 @@ export const TicketWorkLogModal = ({
     () => eligibleTechnicians.filter((person) => person.fullName !== currentUser.fullName),
     [eligibleTechnicians, currentUser.fullName]
   );
+
+  // KURAL: Düzenlemede personel değişikliğine izin vermiyoruz (kaydın kime ait
+  // olduğu sabit kalır); sadece yeni kayıt eklerken "başka biri için" seçilebilir.
+  const isDifferentUser = !isEditing && selectedUser.fullName !== currentUser.fullName;
 
   const handleDateChange = (field: 'startDate' | 'endDate', value: Date | null) => {
     if (field === 'startDate') {
@@ -96,46 +121,44 @@ export const TicketWorkLogModal = ({
     if (!startDate || !endDate) return;
     if (endDate.getTime() <= startDate.getTime()) return;
 
-    const targetUser = isDifferentUser ? selectedUser : currentUser;
+    const targetUser = isEditing ? { fullName: editingLog!.fullName } : selectedUser;
+
+    // KURAL: Mesai kaydı artık onay beklemeden doğrudan eklenir/güncellenir; bu yüzden
+    // status/requestedBy alanları set edilmiyor (görünürde onay bekleyen bir kayıt kalmıyor).
     const newLog: WorkLog = {
-      id: `${Date.now()}`,
+      id: editingLog?.id ?? `${Date.now()}`,
       fullName: targetUser.fullName,
-      sicilNo: '',
+      sicilNo: editingLog?.sicilNo || '',
       startDate: startDate.toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
       endDate: endDate.toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
       durationStr: durationParts.join(' ') || '0 Dk',
       description: description.trim() || undefined,
-      status: isDifferentUser ? 'PENDING' : undefined,
-      requestedBy: isDifferentUser ? currentUser.fullName : undefined,
     };
 
-    if (isDifferentUser) {
-      onAction('requestApproval', { workLog: newLog, ticketId: ticket?.id ?? null });
-      return;
-    }
-
-    onAction('addWorkLog', { workLog: newLog, ticketId: ticket?.id ?? null });
+    onSave(newLog);
   };
 
   return (
     <Dialog
-      header="Mesai / Çalışma Kaydı Ekle"
+      header={isEditing ? 'Mesai / Çalışma Kaydını Düzenle' : 'Mesai / Çalışma Kaydı Ekle'}
       visible={visible}
       style={{ width: '480px', maxWidth: '95vw' }}
       dismissableMask
       onHide={onHide}
     >
       <div className="flex flex-column gap-3">
-        <div className="flex align-items-center gap-2">
-          <Checkbox
-            inputId="diffUser"
-            checked={isDifferentUser}
-            onChange={(e) => setIsDifferentUser(e.checked ?? false)}
-          />
-          <label htmlFor="diffUser" className="font-medium">Başka bir kullanıcı için ekle</label>
-        </div>
+        {!isEditing && (
+          <div className="flex align-items-center gap-2">
+            <Checkbox
+              inputId="diffUser"
+              checked={isDifferentUser}
+              onChange={(e) => setSelectedUser(e.checked ? (visibleTechnicians[0] || currentUser) as TicketWorkLogUser : (currentUser as TicketWorkLogUser))}
+            />
+            <label htmlFor="diffUser" className="font-medium">Başka bir kullanıcı için ekle</label>
+          </div>
+        )}
 
-        {isDifferentUser && (
+        {!isEditing && isDifferentUser && (
           <div>
             <label className="font-bold mb-2 block">Personel Seçimi</label>
             <Dropdown
@@ -147,6 +170,12 @@ export const TicketWorkLogModal = ({
               placeholder="Personel Seçin"
               className="w-full"
             />
+          </div>
+        )}
+
+        {isEditing && (
+          <div className="text-sm text-600">
+            <span className="font-semibold">{editingLog?.fullName}</span> adına kayıtlı mesai düzenleniyor.
           </div>
         )}
 
@@ -205,7 +234,7 @@ export const TicketWorkLogModal = ({
 
         <div className="flex justify-content-end gap-2 mt-2">
           <Button label="İptal" severity="secondary" onClick={onHide} />
-          <Button label="Listeye Ekle" severity="success" icon="pi pi-plus" onClick={handleSave} />
+          <Button label={isEditing ? 'Güncelle' : 'Listeye Ekle'} severity="success" icon={isEditing ? 'pi pi-check' : 'pi pi-plus'} onClick={handleSave} />
         </div>
       </div>
     </Dialog>

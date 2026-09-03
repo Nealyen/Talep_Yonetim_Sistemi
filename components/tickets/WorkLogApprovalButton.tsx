@@ -7,14 +7,13 @@ import { usePendingWorkLogs } from '@/hooks/usePendingWorkLogs';
 import WorkLogApprovalModal from '@/app/components/ticket/WorkLogApprovalModal';
 
 export interface WorkLogApprovalButtonProps {
-    /** Onay/red işlemi başarıyla tamamlandığında çağrılır (örn. toast göstermek için) */
+    /** Onay/red işlemi başarıyla tamamlandığında çağrılır */
     onResolved?: (isApproved: boolean) => void;
 }
 
 /**
  * "Mesai Onayları" butonu: rozet sayısı, modal açma/kapama ve onay/red işlemini
  * kendi içinde yönetir. Önceden her sayfada (tum-talepler, taleplerim, is-havuzu,
- * uzman-aktif-gorevler) ~15-20 satır olarak kopyalanan bu mantık artık tek component.
  */
 export const WorkLogApprovalButton = ({ onResolved }: WorkLogApprovalButtonProps) => {
     const { resolveWorkLogApproval } = useTickets();

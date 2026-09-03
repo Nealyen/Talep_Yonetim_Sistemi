@@ -1,5 +1,6 @@
 'use client';
 
+//aktif kullancıyı tutan kısım
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'CALISAN' | 'TEKNISYEN' | 'KOORDINATOR' | 'ADMIN';
