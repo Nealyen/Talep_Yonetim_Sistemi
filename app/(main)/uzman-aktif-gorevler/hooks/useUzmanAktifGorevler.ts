@@ -130,6 +130,48 @@ export const useUzmanAktifGorevler = () => {
 
     const onRowClick = (event: any) => openEditDialog(event.data as Ticket);
 
+    // KURAL: Aşağıdaki ince sarmalayıcılar, JSX'te doğrudan state setleyen inline
+    // fonksiyonların (SRP ihlali) sayfa bileşeninden kalkıp hook'a taşınması içindir.
+    const handlePreview = (ticket: Ticket) => {
+        setSelectedTicket(ticket);
+        setDialogVisible(true);
+    };
+
+    const handleReleaseRow = (ticket: Ticket) => {
+        setSelectedTicket(ticket);
+        openReleaseReasonModal();
+    };
+
+    const handleDelegateRow = (ticket: Ticket) => {
+        setSelectedTicket(ticket);
+        setDelegateDialogVisible(true);
+    };
+
+    const handleHistoryModalAction = (action: string) => {
+        if (action === 'close') setDialogVisible(false);
+    };
+
+    const openHistoryFromEditFooter = () => {
+        setEditDialogVisible(false);
+        setDialogVisible(true);
+    };
+
+    const openDelegateFromEditFooter = () => setDelegateDialogVisible(true);
+
+    const closeDelegateDialog = () => {
+        setDelegateDialogVisible(false);
+        setTargetTech('');
+    };
+
+    const handleActionReasonConfirm = (messageText?: string) => {
+        if (!selectedTicket) return;
+        if (actionType === 'release') {
+            void handleRelease(selectedTicket.id, messageText);
+        } else {
+            void handleComplete(selectedTicket.id, messageText);
+        }
+    };
+
     // onay sonrası modalın kendi
     // triggerSave() metodu çağrılıyor; bu da tıpkı modalın dahili "Kaydet" butonuna
     // basılmış gibi gerçek form verisini onSave (handleSaveEdit) üzerinden gönderiyor.
@@ -185,7 +227,15 @@ export const useUzmanAktifGorevler = () => {
         handleComplete,
         openCompleteReasonModal,
         handleAssignAction,
-        onRowClick
+        onRowClick,
+        handlePreview,
+        handleReleaseRow,
+        handleDelegateRow,
+        handleHistoryModalAction,
+        openHistoryFromEditFooter,
+        openDelegateFromEditFooter,
+        closeDelegateDialog,
+        handleActionReasonConfirm
     };
 };
 
