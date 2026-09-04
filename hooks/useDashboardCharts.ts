@@ -73,10 +73,19 @@ export const useDashboardCharts = (viewMode: DashboardViewMode): DashboardCharts
     const [charts, setCharts] = useState<DashboardCharts>({ month1: null, month3: null, all: null, options: {} });
 
     useEffect(() => {
-        const activeTickets =
-            viewMode === 'assigned'
-                ? tickets.filter((t) => t.assignee === currentUser.fullName)
-                : tickets.filter((t) => t.requester === currentUser.fullName);
+        // KURAL: Admin ve Koordinatör rollerinde "üzerime atanan / benim açtığım" ayrımı
+        // gerçek çalışma şeklini yansıtmıyor — bu roller kişisel değil, kurumsal genel
+        // durumu izler. Bu yüzden onlar için grafikler HER ZAMAN sistemdeki TÜM
+        // taleplere göre hesaplanır (aksi halde çoğunlukla "Veri bulunamadı" görünür,
+        // çünkü admin/koordinatörün kişisel talep/atama sayısı azdır). Teknisyen ve
+        // Çalışan için ise mevcut kişisel filtreleme (assigned/created) korunuyor.
+        const isManagementRole = currentUser.role === 'ADMIN' || currentUser.role === 'KOORDINATOR';
+
+        const activeTickets = isManagementRole
+            ? tickets
+            : viewMode === 'assigned'
+            ? tickets.filter((t) => t.assignee === currentUser.fullName)
+            : tickets.filter((t) => t.requester === currentUser.fullName);
 
         const documentStyle = getComputedStyle(document.documentElement);
 

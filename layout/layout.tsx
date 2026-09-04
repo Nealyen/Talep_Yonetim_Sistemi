@@ -8,6 +8,7 @@ import AppFooter from './AppFooter';
 import AppConfig from './AppConfig';
 import { LayoutContext } from './context/layoutcontext';
 import { UserProvider } from '@/layout/context/UserContext';
+import { TeamProvider } from '@/layout/context/TeamContext';
 import { TicketProvider } from '@/layout/context/TicketContext'; // EKSİK OLAN PROVIDER EKLENDİ
 import { PrimeReactContext } from 'primereact/api';
 import { useEventListener } from 'primereact/hooks';
@@ -64,6 +65,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     return (
         <UserProvider>
+            <TeamProvider>
             <TicketProvider> {/* TICKET PROVIDER SİSTEME GERİ DAHİL EDİLDİ */}
                 <div className={containerClass}>
                     <AppTopbar ref={topbarRef} />
@@ -78,6 +80,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <div className="layout-mask"></div>
                 </div>
             </TicketProvider>
+            </TeamProvider>
         </UserProvider>
     );
 }

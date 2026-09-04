@@ -18,6 +18,8 @@ const TaleplerimPage = () => {
         setSearch,
         statusFilter,
         setStatusFilter,
+        dateRange,
+        setDateRange,
         selectedTicket,
         dialogVisible,
         setDialogVisible,
@@ -45,7 +47,14 @@ const TaleplerimPage = () => {
                     {isLoading && <Message severity="info" className="w-full mb-3" text="Talepler yükleniyor..." />}
                     {loadError && <Message severity="warn" className="w-full mb-3" text={loadError} />}
 
-                    <TaleplerimFiltre search={search} onSearchChange={setSearch} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} />
+                    <TaleplerimFiltre
+                        search={search}
+                        onSearchChange={setSearch}
+                        statusFilter={statusFilter}
+                        onStatusFilterChange={setStatusFilter}
+                        dateRange={dateRange}
+                        onDateRangeChange={setDateRange}
+                    />
 
                     <TaleplerimTablo tickets={filteredTickets} onRowSelect={openTicketHistory} onApprove={handleApprove} onObject={handleObject} />
                 </Card>

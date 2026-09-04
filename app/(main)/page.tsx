@@ -22,6 +22,12 @@ const Dashboard = () => {
     const router = useRouter();
 
     const isTechOrAdmin = currentUser.role === 'TEKNISYEN' || currentUser.role === 'KOORDINATOR' || currentUser.role === 'ADMIN';
+    // KURAL: "Üzerimdeki Aktif Görevler / Oluşturduğum Talepler" ayrımı sadece
+    // Teknisyen için kişisel bir anlam taşır. Admin/Koordinatör dashboard'ı artık
+    // her zaman sistem geneli veriyi gösterdiği için (bkz. useDashboardCharts) bu
+    // seçim onlara gösterilmiyor — aksi halde tıklanınca hiçbir şeyin değişmediği
+    // kafa karıştırıcı bir kontrol olurdu.
+    const showViewToggle = currentUser.role === 'TEKNISYEN';
 
     const [viewMode, setViewMode] = useState<DashboardViewMode>('assigned');
     // Çalışan hesaba geçildiğinde state kalıntısını engelleyen otomatik rol senkronizasyonu
@@ -38,7 +44,7 @@ const Dashboard = () => {
 
     return (
         <div className="grid">
-            {isTechOrAdmin && (
+            {showViewToggle && (
                 <div className="col-12 flex justify-content-center mb-3">
                     <SelectButton value={viewMode} onChange={(e) => e.value && setViewMode(e.value)} options={VIEW_OPTIONS} allowEmpty={false} />
                 </div>
@@ -52,6 +58,7 @@ const Dashboard = () => {
                             bundle={charts.month1}
                             options={charts.options}
                             showActiveTaskCount={effectiveViewMode === 'assigned'}
+                            onCardClick={() => router.push('/taleplerim?range=1m')}
                         />
                     </div>
                     <div className="col-12 lg:col-4">
@@ -60,6 +67,7 @@ const Dashboard = () => {
                             bundle={charts.month3}
                             options={charts.options}
                             showActiveTaskCount={effectiveViewMode === 'assigned'}
+                            onCardClick={() => router.push('/taleplerim?range=3m')}
                         />
                     </div>
                     <div className="col-12 lg:col-4">
@@ -68,6 +76,7 @@ const Dashboard = () => {
                             bundle={charts.all}
                             options={charts.options}
                             showActiveTaskCount={effectiveViewMode === 'assigned'}
+                            onCardClick={() => router.push('/taleplerim?range=all')}
                         />
                     </div>
                 </>

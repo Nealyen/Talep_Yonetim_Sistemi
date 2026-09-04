@@ -26,7 +26,8 @@ const AppMenu = () => {
 
         const talepItems: AppMenuItem[] = [
             { label: 'Yeni Talep Oluştur', icon: 'pi pi-fw pi-plus-circle', to: '/yeni-talep' },
-            { label: 'Taleplerim', icon: 'pi pi-fw pi-list', to: '/taleplerim' }
+            { label: 'Taleplerim', icon: 'pi pi-fw pi-list', to: '/taleplerim' },
+            { label: 'Geçmiş Talepler', icon: 'pi pi-fw pi-book', to: '/gecmis-talepler' }
         ];
 
         if (activeRole === 'ADMIN' || activeRole === 'KOORDINATOR') {
@@ -60,6 +61,7 @@ const AppMenu = () => {
         
         if (activeRole === 'ADMIN') {
             kurumsalItems.push({ label: 'Kullanıcı & Rol Yönetimi', icon: 'pi pi-fw pi-users', to: '/kullanicilar' });
+            kurumsalItems.push({ label: 'Ekip Yönetimi', icon: 'pi pi-fw pi-sitemap', to: '/ekip-yonetimi' });
             kurumsalItems.push({ label: 'Denetim İzi (Audit Log)', icon: 'pi pi-fw pi-history', to: '/denetim-izi' });
         }
 

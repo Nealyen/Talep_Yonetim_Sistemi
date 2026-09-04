@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, forwardRef, useImperativeHandle, useContext } from 'react';
 import { useUser, UserRole, SpecialtyType } from '@/layout/context/UserContext';
+import { useTeams } from '@/layout/context/TeamContext';
 import { useTickets } from '@/layout/context/TicketContext';
 import { LayoutContext } from '@/layout/context/layoutcontext';
 import { Button } from 'primereact/button';
@@ -9,6 +10,7 @@ import { Dialog } from 'primereact/dialog';
 import { Tag } from 'primereact/tag';
 import { InputText } from 'primereact/inputtext';
 import { Dropdown } from 'primereact/dropdown';
+import { MultiSelect } from 'primereact/multiselect';
 import { Message } from 'primereact/message';
 
 
@@ -38,6 +40,7 @@ export const AppTopbar = forwardRef<any, any>((props, ref) => {
     
     // UYUMSUZLUK GİDERİLDİ: Context'teki doğru fonksiyon isimleri çağrıldı.
     const { users, currentUser, setCurrentUser, addUser, resetUsers } = useUser();
+    const { teams } = useTeams();
 const { resetTickets } = useTickets();
     
     const [visible, setVisible] = useState(false);
@@ -53,7 +56,7 @@ const { resetTickets } = useTickets();
     const [formData, setFormData] = useState({
         fullName: '',
         sicilNo: '',
-        department: '', 
+        teams: [] as string[],
         email: '',
         dahili: '',
         role: 'CALISAN' as UserRole,
@@ -127,7 +130,7 @@ const { resetTickets } = useTickets();
                                 <Button 
                                     label="Yeni Hesap Ekle" icon="pi pi-user-plus" size="small" 
                                     onClick={() => {
-                                        setFormData({ fullName: '', sicilNo: '', department: '', email: '', dahili: '', role: 'CALISAN', specialty: null });
+                                        setFormData({ fullName: '', sicilNo: '', teams: [], email: '', dahili: '', role: 'CALISAN', specialty: null });
                                         setErrorMsg(null);
                                         setView('add');
                                     }} 
@@ -168,7 +171,14 @@ const { resetTickets } = useTickets();
                                 <label className="font-bold">Rol</label>
                                 <Dropdown 
                                     value={formData.role} options={ROLE_OPTIONS} 
-                                    onChange={(e) => setFormData({...formData, role: e.value, specialty: e.value !== 'TEKNISYEN' ? null : formData.specialty})} 
+                                    onChange={(e) => setFormData({
+                                        ...formData,
+                                        role: e.value,
+                                        specialty: e.value !== 'TEKNISYEN' ? null : formData.specialty,
+                                        // KURAL: Çalışan (CALISAN) rolü en fazla 1 ekibe dahil olabilir;
+                                        // diğer roller birden fazla ekibe dahil olabilir.
+                                        teams: e.value === 'CALISAN' ? formData.teams.slice(0, 1) : formData.teams
+                                    })} 
                                     required disabled={!isAdmin} 
                                 />
                             </div>
@@ -187,8 +197,24 @@ const { resetTickets } = useTickets();
                                 <InputText value={formData.sicilNo} onChange={(e) => setFormData({...formData, sicilNo: e.target.value})} required />
                             </div>
                             <div className="field col-12 md:col-6">
-                                <label className="font-bold">Birim / Departman</label>
-                                <InputText value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} required />
+                                <label className="font-bold">Ekip</label>
+                                {formData.role === 'CALISAN' ? (
+                                    <Dropdown
+                                        value={formData.teams[0] || null}
+                                        options={teams}
+                                        onChange={(e) => setFormData({ ...formData, teams: e.value ? [e.value] : [] })}
+                                        placeholder="Ekip Seçiniz"
+                                        showClear
+                                    />
+                                ) : (
+                                    <MultiSelect
+                                        value={formData.teams}
+                                        options={teams}
+                                        onChange={(e) => setFormData({ ...formData, teams: e.value })}
+                                        placeholder="Ekip(ler) Seçiniz"
+                                        display="chip"
+                                    />
+                                )}
                             </div>
                             <div className="field col-12 md:col-6">
                                 <label className="font-bold">E-Posta Adresi</label>

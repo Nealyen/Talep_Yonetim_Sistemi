@@ -78,7 +78,84 @@ Bu sayfalar zaten kısa/basit ya da kısmen hook kullanıyor; SRP ihlali diğerl
    üzerinde önceki turlarda kritik bug düzeltmeleri yapıldı ve riski artırmamak için
    bu refactor turunda elle sürülmedi.
 
-## Nasıl devam edilir?
+## 🆕 GÜNCELLEME (2. tur) — Ekip/Rol sistemi ve Taleplerim geliştirmeleri
+
+Bu turda yapılanlar:
+
+1. **"Birim / Departman" → "Ekip" (tamamlandı):** `UserContext.tsx`'teki `department` alanı
+   kaldırıldı, yerine `teams: string[]` geldi. Yeni `layout/context/TeamContext.tsx`
+   eklendi (merkezi ekip listesi, `localStorage` ile kalıcı). `AppTopbar.tsx`'teki
+   "Yeni Personel Ekle" formu, `KullanicilarTablo.tsx`, `TicketContext.tsx` ve
+   `TicketAssignModal.tsx` buna göre güncellendi.
+
+2. **"Ekip Yönetimi" sayfası (tamamlandı, sadece ADMIN):**
+   `app/(main)/ekip-yonetimi/` — eski sistemdeki 2 tablolu tasarım (ekip listesi +
+   kişi-ekip eşleştirme, bir kişi birden fazla satırda/ekipte olabiliyor) birebir
+   uygulandı. CALISAN rolü bu atamaya dahil değil (tek ekipleri "Yeni Personel"
+   formundan zaten seçiliyor).
+
+3. **Taleplerim tarih filtresi (tamamlandı):** `useTaleplerim.ts` hook'una
+   `dateRange` state'i ve `Calendar` (range) bileşeni eklendi.
+
+4. **Dashboard grafiklerine tıklama → Taleplerim'e yönlendirme (tamamlandı):**
+   `PerformanceChartCard.tsx`'e `onCardClick` prop'u eklendi; Dashboard'daki "Son 1
+   Ay / Son 3 Ay / Tüm Zamanlar" kartları artık tıklanabilir ve
+   `/taleplerim?range=1m` (veya `3m`/`all`) adresine yönlendiriyor.
+   `useTaleplerim.ts` bu `range` parametresini okuyup tarih filtresini otomatik
+   dolduruyor (durumdan/state'ten bağımsız, sadece tarihe göre).
+
+5. **Kapatılmış taleplerin 1 ay sonra Taleplerim'den kalkması (tamamlandı):**
+   `Ticket` tipine `closedAt?: string` eklendi, `confirmTicket` onaylandığında bu
+   alanı dolduruyor. `useTaleplerim.ts`, kapatılıp üzerinden 1 aydan fazla geçen
+   talepleri artık listelemiyor.
+
+6. **"Geçmiş Talepler" sayfası (tamamlandı, HERKESE AÇIK):**
+   `app/(main)/gecmis-talepler/` — sistemdeki tüm kapatılmış talepleri (kim açtığı/
+   kime atandığı fark etmeksizin) gösteren, rol kısıtlaması OLMAYAN yeni bir sayfa.
+   Menüye "Geçmiş Talepler" olarak eklendi.
+
+7. **"Yeni Rol Tanımla" alanı (tamamlandı, SADECE GÖRSEL):** Kullanıcılar (RBAC)
+   sayfasına, admin'in yeni bir rol adı + yetki listesi girip "taslak" olarak
+   ekleyebildiği bir bölüm eklendi. **Bilerek gerçek bir işleve bağlanmadı** — arayüzde
+   sarı "Ön İzleme — henüz aktif değil" etiketi ve mavi bilgi kutusu ile bunun
+   sadece görsel bir taslak olduğu, sayfa yenilenince sıfırlanacağı ve gerçek
+   yetkilendirmeyi etkilemediği açıkça belirtiliyor. Gerçek bir rol sistemine
+   dönüştürülmesi (UserRole tipinin genişletilmesi, RoleRouteGuard'ların
+   güncellenmesi vb.) ayrı, çok daha büyük bir iştir.
+
+## 🆕 GÜNCELLEME (3. tur) — Dashboard ve Geçmiş Talepler iyileştirmeleri
+
+1. **Dashboard kart yükseklik eşitsizliği düzeltildi:** `PerformanceChartCard.tsx`'e
+   `h-full flex flex-column` eklendi, artık 3 kart (Son 1 Ay / Son 3 Ay / Tüm
+   Zamanlar) her zaman eşit yükseklikte, altta boşluk kalmıyor.
+
+2. **Dashboard grafiklerinde artık gerçek veri görünüyor:** `useDashboardCharts.ts`
+   düzeltildi — Admin ve Koordinatör rollerinde "üzerime atanan / benim açtığım"
+   kişisel filtrelemesi anlamsız kalıyordu (bu roller genelde kendi adına az talep
+   açar/üstlenir, bu yüzden hep "Veri bulunamadı" görünüyordu). Artık bu iki rol
+   için grafikler HER ZAMAN sistemdeki TÜM taleplere göre hesaplanıyor. Teknisyen
+   için kişisel görünüm seçici (Üzerimdeki Görevler/Oluşturduğum Talepler) korundu,
+   Admin/Koordinatör'den bu anlamsız kalan seçici kaldırıldı. Ayrıca veri yokken
+   grafiğin üzerine gelince çıkan yanıltıcı "Yeni/Havuzda: 1" tooltip'i de düzeltildi.
+
+3. **"Geçmiş Talepler" sayfası artık role göre kapsam değiştiriyor:**
+   - Admin ve Koordinatör HARİÇ herkes SADECE kendi açtığı geçmiş talepleri görür.
+   - Admin/Koordinatör'e, başlığın yanında Dashboard'daki gibi bir "Kendi
+     Taleplerim / Tüm Talepler" seçici eklendi — istedikleri zaman ikisi arasında
+     geçiş yapabiliyorlar.
+   - Arama kutusunun yanına bir **Kategori filtresi** (dropdown) eklendi.
+
+
+- Dashboard (`app/(main)/page.tsx`) içindeki `isTechOrAdmin`/`effectiveViewMode`/
+  `actionTickets` hesaplamaları hâlâ sayfa içinde, kendi hook'una taşınmadı.
+- `sss`, `yonerge`, `landing/page.tsx` (557 satır), auth/404 sayfaları — hiç
+  incelenmedi.
+- `lib/mock-db.ts` içindeki eski `department` alanları bilinçli olarak
+  değiştirilmedi (canlı arayüzden hiç kullanılmayan, Node tarafı/legacy bir dosya
+  olduğu için dokunmadım — risk/fayda dengesi uygun değildi).
+- "Yeni Rol Tanımla" alanının gerçek bir yetkilendirme sistemine bağlanması.
+
+
 
 Yukarıdaki "TAMAMLANANLAR" bölümündeki 7 dosya için kullanılan desen birebir
 tekrarlanabilir:

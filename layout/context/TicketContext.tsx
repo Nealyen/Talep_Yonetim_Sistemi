@@ -10,7 +10,7 @@ export interface SystemUser {
     name: string;
     email: string;
     role: UserRole;
-    department: string;
+    teams: string[];
     status: 'AKTİF' | 'PASİF';
 }
 
@@ -47,6 +47,7 @@ export interface Ticket {
     location?: string;
     serialNo?: string;
     createdAt: string;
+    closedAt?: string;
     history: TicketHistory[];
     barkodNo?: string;
     
@@ -97,7 +98,7 @@ export const TicketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         name: u.fullName,
         email: u.email,
         role: u.role,
-        department: u.department || 'Belirtilmemiş',
+        teams: u.teams || [],
         status: 'AKTİF'
     }));
 
@@ -323,6 +324,10 @@ const addTicket = async (data: Omit<Ticket, 'id' | 'createdAt' | 'history' | 'st
                 return {
                     ...t,
                     status: approved ? 'KAPATILDI' as const : 'İŞLEMDE' as const,
+                    // KURAL: "Geçmiş Talepler" arşivlemesi ve "1 ay sonra Taleplerim'den
+                    // düşme" kuralı için, talebin ne zaman kapatıldığını history metnini
+                    // ayrıştırmak yerine doğrudan bu alandan güvenilir şekilde okuyoruz.
+                    closedAt: approved ? new Date().toISOString() : t.closedAt,
                     history: [
                         ...t.history,
                         { date: new Date().toLocaleString('tr-TR'), action: approved ? 'Çözüm onaylandı ve talep kapatıldı.' : 'Çözüm reddedildi, işleme geri alındı.', user: actorName || currentUser.fullName }

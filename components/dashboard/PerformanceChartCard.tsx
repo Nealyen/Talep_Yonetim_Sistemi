@@ -11,6 +11,8 @@ export interface PerformanceChartCardProps {
     options: any;
     /** "assigned" görünümünde ek olarak "Aktif Görev Miktarı" satırı gösterilir */
     showActiveTaskCount: boolean;
+    /** Karta tıklanınca çalışır (örn. Taleplerim sayfasına o tarih aralığıyla gitmek için) */
+    onCardClick?: () => void;
 }
 
 /**
@@ -18,13 +20,29 @@ export interface PerformanceChartCardProps {
  * Dashboard'da "Son 1 Ay" / "Son 3 Ay" / "Tüm Zamanlar" için 3 kez kullanılıyordu,
  * artık tek component olarak paylaşılıyor.
  */
-export const PerformanceChartCard = ({ title, bundle, options, showActiveTaskCount }: PerformanceChartCardProps) => {
+export const PerformanceChartCard = ({ title, bundle, options, showActiveTaskCount, onCardClick }: PerformanceChartCardProps) => {
     const { data, counts, total, activeTaskCount } = bundle;
 
+    // KURAL: Veri yokken placeholder tek dilim [1] gösteriliyor (boş halka yerine
+    // görsel bir halka olsun diye); ama bu placeholder'ın üzerine gelince "Yeni/Havuzda: 1"
+    // gibi YANILTICI bir tooltip çıkıyordu. Veri yokken tooltip'i kapatıyoruz.
+    const chartOptions =
+        total === 0
+            ? {
+                  ...options,
+                  plugins: { ...(options?.plugins || {}), tooltip: { enabled: false } }
+              }
+            : options;
+
     return (
-        <Card title={title}>
+        <Card
+            title={title}
+            className={`h-full flex flex-column${onCardClick ? ' cursor-pointer hover:shadow-4 transition-all transition-duration-150' : ''}`}
+            onClick={onCardClick}
+        >
+            {onCardClick && <div className="text-xs text-500 mb-2">Taleplerim'de bu tarih aralığını görmek için tıklayın</div>}
             <div className="flex justify-content-center align-items-center" style={{ height: '220px' }}>
-                <Chart type="doughnut" data={data} options={options} className="w-full" style={{ maxWidth: '220px' }} />
+                <Chart type="doughnut" data={data} options={chartOptions} className="w-full" style={{ maxWidth: '220px' }} />
             </div>
 
             {total === 0 ? (

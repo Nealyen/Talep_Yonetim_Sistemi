@@ -11,7 +11,7 @@ import { Ticket } from '@/layout/context/TicketContext';
 export interface TechnicianOption {
   fullName: string;
   role?: string;
-  department?: string;
+  teams?: string[];
 }
 
 export interface TicketAssignModalProps {

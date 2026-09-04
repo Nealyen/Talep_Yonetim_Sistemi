@@ -1,7 +1,6 @@
 'use client';
 
 //aktif kullancıyı tutan kısım
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'CALISAN' | 'TEKNISYEN' | 'KOORDINATOR' | 'ADMIN';
@@ -16,7 +15,11 @@ export interface AppUser {
     dahili: string;
     title?: string;
     specialty?: SpecialtyType;
-    department?: string;
+    // KURAL: Eski "department" (Birim/Departman, tek bir metin) alanı kaldırıldı.
+    // Yerine "teams" (Ekip) geldi: bir personel birden fazla ekibe dahil olabilir
+    // (CALISAN rolü hariç — bkz. Ekip Yönetimi sayfası). Ekiplerin kendisi artık
+    // TeamContext üzerinden merkezi olarak yönetiliyor.
+    teams?: string[];
 }
 
 interface ValidationResult {
@@ -42,7 +45,7 @@ const DEFAULT_USERS: AppUser[] = [
         email: 'admin@kurum.local',
         sicilNo: '0000',
         dahili: '0000',
-        department: 'Bilgi İşlem Daire Bşk.'
+        teams: []
     }
 ];
 
