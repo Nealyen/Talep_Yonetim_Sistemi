@@ -1,0 +1,66 @@
+@import './_variables';
+@import "./_mixins";
+@import "./_main";
+@import "./_topbar";
+@import "./_menu";
+@import "./_config";
+@import "./_content";
+@import "./_footer";
+@import "./_responsive";
+@import "./_utils";
+@import "./_typography";
+
+/* Tüm temalarda açılır menü (Dropdown, MultiSelect) seçili öğe okunabilirlik garantisi */
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
+    background-color: var(--primary-color) !important;
+    color: #ffffff !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight *,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight * {
+    color: #ffffff !important;
+}
+
+/* Hover (Üzerine gelme) durumları için esnek geçiş */
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):hover,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item:not(.p-highlight):hover {
+    background-color: var(--surface-hover) !important;
+    color: var(--text-color) !important;
+    transform: translateX(6px) !important;
+    transition: transform 0.2s ease, background-color 0.2s ease !important;
+}
+
+/* KURAL: PrimeReact'in otomatik overlay konumlandırması (Dropdown, MultiSelect,
+   Calendar/DatePicker) bazı durumlarda paneli input'un altına değil, sayfanın
+   tamamen yanlış bir yerine (örn. document.body'nin en altına) yerleştiriyordu.
+   ASIL ÇÖZÜM appendTo="self" prop'udur (bileşen panelini body'ye "portal" ile
+   göndermek yerine kendi input'unun bitişiğine, bir kardeş eleman olarak basar
+   — böylece panel HER ZAMAN doğru referans noktasına göre konumlanır, tablo
+   satırı, Dialog içi, sayfanın neresi olursa olsun). Bu CSS kuralı sadece
+   appendTo="self" + panelClassName="always-bottom-panel" birlikte kullanıldığında
+   panelin dikeyde tam olarak input'un hemen altına (üstüne değil) oturmasını
+   garanti eden bir TAMAMLAYICI kuraldır — appendTo="self" OLMADAN bu CSS tek
+   başına kullanılırsa (panel body'ye eklenmiş haldeyken) paneli sayfanın en
+   altına fırlatır, bu yüzden ikisi HER ZAMAN birlikte eklenmelidir. */
+.always-bottom-panel {
+    top: 100% !important;
+    bottom: auto !important;
+    margin-top: 4px !important;
+    transform-origin: top center !important;
+}
+
+/* Sayfalama (Paginator) Aktif Sayfa Numarası Kontrast Düzeltmesi */
+.p-paginator .p-paginator-pages .p-paginator-page {
+    &.p-highlight {
+        background-color: var(--primary-color) !important;
+        color: var(--primary-color-text, #ffffff) !important;
+        font-weight: 700 !important;
+        border-color: var(--primary-color) !important;
+    }
+
+    &:not(.p-highlight):hover {
+        background: var(--surface-hover) !important;
+        color: var(--text-color) !important;
+    }
+}

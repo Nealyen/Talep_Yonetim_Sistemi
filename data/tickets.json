@@ -1,0 +1,590 @@
+[
+  {
+    "title": "[YAZICILAR/TARAYICILAR] 1- Tarayıcı İşlemleri",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Bilgisayar Adı: MAM-1907SV.MAM.GOV.TR\nIP Numarası: 09.9.3.07\nUlaşılacak Dahili: 0\nCep Tel: 0\nOda No: 0\nCihaz Barkod No: MAM-BRK-1011\n\nAçıklamalar:",
+    "location": "0",
+    "requester": "Çalışan-1",
+    "id": "TLP-2026-022",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "26.08.2026 09:51:52",
+    "history": [
+      {
+        "date": "26.08.2026 09:51:52",
+        "action": "Talep oluşturuldu.",
+        "user": "Çalışan-1"
+      }
+    ]
+  },
+  {
+    "title": "[AĞ/İNTERNET] 2- Ağ / İnternet Hattı Çekilmesi",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Bilgisayar Adı: MAM-1907SV.MAM.GOV.TR\nIP Numarası: 09.9.3.07\nUlaşılacak Dahili: 0\nCep Tel: 0\nOda No: 2\n\nAçıklamalar:",
+    "location": "2",
+    "requester": "Çalışan-1",
+    "id": "TLP-2026-021",
+    "status": "İŞLEMDE",
+    "assignee": "Mehmet Demir",
+    "createdAt": "26.08.2026 09:36:21",
+    "history": [
+      {
+        "date": "26.08.2026 09:36:21",
+        "action": "Talep oluşturuldu.",
+        "user": "Çalışan-1"
+      },
+      {
+        "date": "26.08.2026 09:39:35",
+        "action": "UZMAN_ATANDI",
+        "user": "Mehmet Demir"
+      },
+      {
+        "date": "26.08.2026 09:54:48",
+        "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+        "user": "Mehmet Demir"
+      },
+      {
+        "date": "26.08.2026 10:11:25",
+        "action": "TALEP_ISLEME_GERI_ALINDI",
+        "user": "Çalışan-1"
+      }
+    ],
+    "actorRole": "ADMIN"
+  },
+  {
+    "title": "[YAZICILAR/TARAYICILAR] 2- Yazıcım Çalışıyor Ancak Çıktı Alamıyorum",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Bilgisayar Adı: MAM-1907SV.MAM.GOV.TR\nIP Numarası: 09.9.3.07\nUlaşılacak Dahili: 0\nCep Tel: 1\nOda No: 2\nCihaz Barkod No: MAM-BRK-1010\n\nAçıklamalar:",
+    "location": "2",
+    "requester": "Çalışan-1",
+    "id": "TLP-2026-020",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "26.08.2026 08:58:57",
+    "history": [
+      {
+        "date": "26.08.2026 08:58:57",
+        "action": "Talep oluşturuldu.",
+        "user": "Çalışan-1"
+      }
+    ]
+  },
+  {
+    "title": "[YAZICILAR/TARAYICILAR] 2- Yazıcım Çalışıyor Ancak Çıktı Alamıyorum",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Bilgisayar Adı: MAM-1907SV.MAM.GOV.TR\nIP Numarası: 09.9.3.07\nUlaşılacak Dahili: 1\nCep Tel: 1\nOda No: 1\n\nAçıklamalar:",
+    "location": "1",
+    "requester": "Çalışan-1",
+    "id": "TLP-2026-019",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "26.08.2026 08:56:44",
+    "history": [
+      {
+        "date": "26.08.2026 08:56:44",
+        "action": "Talep oluşturuldu.",
+        "user": "Çalışan-1"
+      }
+    ]
+  },
+  {
+    "title": "[YAZICILAR/TARAYICILAR] 2- Yazıcım Çalışıyor Ancak Çıktı Alamıyorum",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Bilgisayar Adı: MAM-1907SV.MAM.GOV.TR\nIP Numarası: 09.9.3.07\nUlaşılacak Dahili: 2\nCep Tel: 0\nOda No: 0\nCihaz Barkod No: MAM-BRK-1002\n\nAçıklamalar:\n1",
+    "location": "0",
+    "requester": "Çalışan-1",
+    "id": "TLP-2026-018",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "26.08.2026 08:50:31",
+    "history": [
+      {
+        "date": "26.08.2026 08:50:31",
+        "action": "Talep oluşturuldu.",
+        "user": "Çalışan-1"
+      }
+    ]
+  },
+  {
+    "title": "[Donanım/Arıza] CEVRE_BIRIMI - Ana Yerleşke / Blok A",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Talep Alt Türü: CEVRE_BIRIMI\nDemirbaş: a | Lokasyon: Ana Yerleşke / Blok A - Oda: sada\nBelirtiler: GUC_YOK\nEk Personel Notu: a",
+    "location": "Ana Yerleşke / Blok A / sada",
+    "serialNo": "a",
+    "requester": "a",
+    "id": "TLP-2026-017",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "24.08.2026 11:35:45",
+    "history": [
+      {
+        "date": "24.08.2026 11:35:45",
+        "action": "Talep oluşturuldu.",
+        "user": "a"
+      },
+      {
+        "date": "24.08.2026 11:36:18",
+        "action": "UZMAN_ATANDI",
+        "user": "Mehmet Demir"
+      },
+      {
+        "date": "24.08.2026 11:36:48",
+        "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+        "user": "Mehmet Demir"
+      },
+      {
+        "date": "24.08.2026 15:48:20",
+        "action": "TALEP_ISLEME_GERI_ALINDI",
+        "user": "a"
+      },
+      {
+        "date": "25.08.2026 15:14:41",
+        "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+        "user": "Mehmet Demir"
+      },
+      {
+        "date": "25.08.2026 15:15:29",
+        "action": "UZMAN_ILISKISI_KESILDI",
+        "user": "KOORDINATOR"
+      }
+    ],
+    "actorRole": "KOORDINATOR"
+  },
+  {
+    "title": "[Yazılım/Erişim] LISANS - Kurumsal EBYS Portalı",
+    "category": "Yazılım/Erişim",
+    "priority": "Düşük",
+    "description": "Talep Alt Türü: LISANS\nSistem: Kurumsal EBYS Portalı | Yetki: Yazma / Güncelleme | Süre: 1 Ay (Geçici) | Proje: s\nEk Personel Notu: s",
+    "requester": "s",
+    "id": "TLP-2026-016",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 16:16:30",
+    "history": [
+      {
+        "date": "21.08.2026 16:16:30",
+        "action": "Talep oluşturuldu.",
+        "user": "s"
+      }
+    ]
+  },
+  {
+    "title": "[Yazılım/Erişim] LISANS - Kurumsal EBYS Portalı",
+    "category": "Yazılım/Erişim",
+    "priority": "Yüksek",
+    "description": "Talep Alt Türü: LISANS\nSistem: Kurumsal EBYS Portalı | Yetki: Yazma / Güncelleme | Süre: 1 Hafta (Geçici) | Proje: s",
+    "requester": "s",
+    "id": "TLP-2026-015",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 16:12:46",
+    "history": [
+      {
+        "date": "21.08.2026 16:12:46",
+        "action": "Talep oluşturuldu.",
+        "user": "s"
+      }
+    ]
+  },
+  {
+    "title": "[Yazılım/Erişim] ERP_EBYS - Kurumsal EBYS Portalı",
+    "category": "Yazılım/Erişim",
+    "priority": "Normal",
+    "description": "Talep Alt Türü: ERP_EBYS\nSistem: Kurumsal EBYS Portalı | Yetki: Yazma / Güncelleme | Süre: 1 Hafta (Geçici) | Proje: s",
+    "requester": "a",
+    "id": "TLP-2026-014",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 16:12:21",
+    "history": [
+      {
+        "date": "21.08.2026 16:12:21",
+        "action": "Talep oluşturuldu.",
+        "user": "a"
+      }
+    ]
+  },
+  {
+    "title": "[Yazılım/Erişim] ERP_EBYS - PostgreSQL Analiz DB",
+    "category": "Yazılım/Erişim",
+    "priority": "Düşük",
+    "description": "Talep Alt Türü: ERP_EBYS\nSistem: PostgreSQL Analiz DB | Yetki: Yazma / Güncelleme | Süre: 1 Ay (Geçici) | Proje: a",
+    "requester": "a",
+    "id": "TLP-2026-013",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 10:23:56",
+    "history": [
+      {
+        "date": "21.08.2026 10:23:56",
+        "action": "Talep oluşturuldu.",
+        "user": "a"
+      }
+    ]
+  },
+  {
+    "title": "[Donanım/Arıza] CEVRE_BIRIMI - Ana Yerleşke / Blok A",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Talep Alt Türü: CEVRE_BIRIMI\nDemirbaş: a | Lokasyon: Ana Yerleşke / Blok A - Oda: a\nBelirtiler: FIZIKSEL_HASAR",
+    "location": "Ana Yerleşke / Blok A / a",
+    "serialNo": "a",
+    "requester": "a",
+    "id": "TLP-2026-012",
+    "status": "KAPATILDI",
+    "assignee": "Teknik Uzman (Oturum Açık)",
+    "createdAt": "21.08.2026 10:11:44",
+    "history": [
+      {
+        "date": "21.08.2026 10:11:44",
+        "action": "Talep oluşturuldu.",
+        "user": "a"
+      },
+      {
+        "date": "21.08.2026 10:15:25",
+        "action": "UZMAN_ATANDI",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:15:28",
+        "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:15:44",
+        "action": "TALEP_ONAYLANDI",
+        "user": "Mock API"
+      }
+    ]
+  },
+  {
+    "title": "[Yazılım/Erişim] VERITABANI - PostgreSQL Analiz DB",
+    "category": "Yazılım/Erişim",
+    "priority": "Yüksek",
+    "description": "Talep Alt Türü: VERITABANI\nSistem: PostgreSQL Analiz DB | Yetki: Yazma / Güncelleme | Süre: 1 Hafta (Geçici) | Proje: a",
+    "requester": "a",
+    "id": "TLP-2026-011",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 10:11:09",
+    "history": [
+      {
+        "date": "21.08.2026 10:11:09",
+        "action": "Talep oluşturuldu.",
+        "user": "a"
+      },
+      {
+        "date": "21.08.2026 10:15:46",
+        "action": "UZMAN_ATANDI",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:15:56",
+        "action": "IS_TAMAMLANDI_ONAY_BEKLIYOR",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:16:04",
+        "action": "TALEP_ISLEME_GERI_ALINDI",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:16:09",
+        "action": "UZMAN_ILISKISI_KESILDI",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:16:15",
+        "action": "UZMAN_ATANDI",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:16:18",
+        "action": "UZMAN_ILISKISI_KESILDI",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:16:24",
+        "action": "UZMAN_ATANDI",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:16:31",
+        "action": "UZMAN_ILISKISI_KESILDI",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 10:20:29",
+        "action": "UZMAN_ATANDI",
+        "user": "Teknik Uzman (Oturum Açık)"
+      },
+      {
+        "date": "21.08.2026 10:21:19",
+        "action": "UZMAN_ILISKISI_KESILDI",
+        "user": "Teknik Uzman (Oturum Açık)"
+      }
+    ]
+  },
+  {
+    "title": "[Donanım/Arıza] PC - Ana Yerleşke / Blok A",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Talep Alt Türü: PC\nDemirbaş: a | Lokasyon: Ana Yerleşke / Blok A - Oda: a\nBelirtiler: FIZIKSEL_HASAR",
+    "location": "Ana Yerleşke / Blok A / a",
+    "serialNo": "a",
+    "requester": "a",
+    "id": "TLP-2026-010",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 10:08:14",
+    "history": [
+      {
+        "date": "21.08.2026 10:08:14",
+        "action": "Talep oluşturuldu.",
+        "user": "a"
+      }
+    ]
+  },
+  {
+    "title": "[Donanım/Arıza] PC - Ana Yerleşke / Blok A",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Talep Alt Türü: PC\nDemirbaş: a | Lokasyon: Ana Yerleşke / Blok A - Oda: a\nBelirtiler: FIZIKSEL_HASAR",
+    "location": "Ana Yerleşke / Blok A / a",
+    "serialNo": "a",
+    "requester": "a",
+    "id": "TLP-2026-009",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 09:56:37",
+    "history": [
+      {
+        "date": "21.08.2026 09:56:37",
+        "action": "Talep oluşturuldu.",
+        "user": "a"
+      },
+      {
+        "date": "21.08.2026 09:59:43",
+        "action": "UZMAN_ATANDI",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 09:59:44",
+        "action": "UZMAN_ILISKISI_KESILDI",
+        "user": "Mock API"
+      }
+    ]
+  },
+  {
+    "title": "[Donanım/Arıza] PC - Ana Yerleşke / Blok A",
+    "category": "Donanım/Arıza",
+    "priority": "Normal",
+    "description": "Talep Alt Türü: PC\nDemirbaş: a | Lokasyon: Ana Yerleşke / Blok A - Oda: a\nBelirtiler: AG_BAGLANTI",
+    "location": "Ana Yerleşke / Blok A / a",
+    "serialNo": "a",
+    "requester": "s",
+    "id": "TLP-2026-008",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 09:53:04",
+    "history": [
+      {
+        "date": "21.08.2026 09:53:04",
+        "action": "Talep oluşturuldu.",
+        "user": "s"
+      }
+    ]
+  },
+  {
+    "title": "[İdari Hizmet] ELEKTRIK - Periyodik Kontrol / Bakım",
+    "category": "İdari Hizmet",
+    "priority": "Düşük",
+    "description": "Talep Alt Türü: ELEKTRIK\nKapsam: Periyodik Kontrol / Bakım | Lokasyon: a",
+    "location": "a",
+    "requester": "a",
+    "id": "TLP-2026-007",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 09:51:51",
+    "history": [
+      {
+        "date": "21.08.2026 09:51:51",
+        "action": "Talep oluşturuldu.",
+        "user": "a"
+      }
+    ]
+  },
+  {
+    "title": "[Güvenlik] PHISHING - Kişisel Bilgisayar",
+    "category": "Güvenlik",
+    "priority": "Düşük",
+    "description": "Talep Alt Türü: PHISHING\nEtkilenen Varlık: Kişisel Bilgisayar | IP/MAC: adwadada",
+    "requester": "adwadwa",
+    "id": "TLP-2026-006",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 09:51:21",
+    "history": [
+      {
+        "date": "21.08.2026 09:51:21",
+        "action": "Talep oluşturuldu.",
+        "user": "adwadwa"
+      }
+    ]
+  },
+  {
+    "title": "[İdari Hizmet] ELEKTRIK - Arıza / Acil Onarım",
+    "category": "İdari Hizmet",
+    "priority": "Düşük",
+    "description": "Talep Alt Türü: ELEKTRIK\nKapsam: Arıza / Acil Onarım | Lokasyon: 123\nEk Personel Notu: asd",
+    "location": "123",
+    "requester": "ali",
+    "id": "TLP-2026-005",
+    "status": "YENİ",
+    "assignee": null,
+    "createdAt": "21.08.2026 09:51:04",
+    "history": [
+      {
+        "date": "21.08.2026 09:51:04",
+        "action": "Talep oluşturuldu.",
+        "user": "ali"
+      }
+    ]
+  },
+  {
+    "title": "[Yazılım/Erişim] ERP_EBYS - GitLab / DevOps Sunucusu",
+    "category": "Yazılım/Erişim",
+    "priority": "Düşük",
+    "description": "Talep Alt Türü: ERP_EBYS\nSistem: GitLab / DevOps Sunucusu | Yetki: Salt Okunur (Read-Only) | Süre: Sürekli (Proje Boyunca) | Proje: 1231",
+    "requester": "dawdwad",
+    "id": "TLP-2026-004",
+    "status": "KAPATILDI",
+    "assignee": "Hasan Kurt (Sistem & Veritabanı Yöneticisi)",
+    "createdAt": "21.08.2026 08:43:51",
+    "history": [
+      {
+        "date": "21.08.2026 08:43:51",
+        "action": "Talep oluşturuldu.",
+        "user": "dawdwad"
+      },
+      {
+        "date": "21.08.2026 08:44:19",
+        "action": "Talep güncellendi.",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 08:44:26",
+        "action": "Talep güncellendi.",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 08:48:51",
+        "action": "Talep güncellendi.",
+        "user": "Mock API"
+      }
+    ]
+  },
+  {
+    "id": "TLP-2026-001",
+    "title": "Bina 2 Kat 3 Ağ Anahtarı (Switch) Port Arızası",
+    "category": "Donanım/Arıza",
+    "priority": "Yüksek",
+    "status": "KAPATILDI",
+    "requester": "Ahmet Yılmaz (Yazılım Grubu)",
+    "assignee": "Mehmet Demir (Ağ Uzmanı)",
+    "description": "Bina 2 Kat 3 ana dağıtım switchinde 12-16 arası portlarda link kopmaları yaşanıyor.",
+    "location": "Bina 2 / Kat 3 / Sistem Odası",
+    "serialNo": "SW-8842-TR",
+    "createdAt": "2026-08-19 09:30",
+    "history": [
+      {
+        "date": "2026-08-19 09:30",
+        "action": "Talep oluşturuldu.",
+        "user": "Ahmet Yılmaz"
+      },
+      {
+        "date": "2026-08-19 10:15",
+        "action": "İş teknik personele atandı.",
+        "user": "Süreç Yöneticisi"
+      },
+      {
+        "date": "21.08.2026 08:42:48",
+        "action": "Talep güncellendi.",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 08:43:14",
+        "action": "Talep güncellendi.",
+        "user": "Mock API"
+      }
+    ]
+  },
+  {
+    "id": "TLP-2026-002",
+    "title": "Veri Analiz Sunucusu PostgreSQL Erişim Yetkisi",
+    "category": "Yazılım/Erişim",
+    "priority": "Normal",
+    "status": "KAPATILDI",
+    "requester": "Zeynep Kaya (AR-GE)",
+    "assignee": "Teknik Uzman (Oturum Açık)",
+    "description": "Test veritabanı okuma yetkisi tanımlanması gerekmektedir.",
+    "createdAt": "2026-08-20 08:45",
+    "history": [
+      {
+        "date": "2026-08-20 08:45",
+        "action": "Talep oluşturuldu.",
+        "user": "Zeynep Kaya"
+      },
+      {
+        "date": "21.08.2026 08:42:51",
+        "action": "Talep güncellendi.",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 08:42:52",
+        "action": "Talep güncellendi.",
+        "user": "Mock API"
+      },
+      {
+        "date": "21.08.2026 08:43:14",
+        "action": "Talep güncellendi.",
+        "user": "Mock API"
+      }
+    ]
+  },
+  {
+    "id": "TLP-2026-003",
+    "title": "İklimlendirme Ünitesi Periyodik Bakımı",
+    "category": "İdari Hizmet",
+    "priority": "Düşük",
+    "status": "KAPATILDI",
+    "requester": "Caner Öz (İdari İşler)",
+    "assignee": "Ali Vural (Teknik Servis)",
+    "description": "Ana sunucu odası klima filtre değişimi tamamlandı, kullanıcı onayı bekleniyor.",
+    "location": "Merkez Sunucu Odası",
+    "createdAt": "2026-08-18 14:00",
+    "history": [
+      {
+        "date": "2026-08-18 14:00",
+        "action": "Talep oluşturuldu.",
+        "user": "Caner Öz"
+      },
+      {
+        "date": "2026-08-19 16:30",
+        "action": "Bakım tamamlandı, onaya sunuldu.",
+        "user": "Ali Vural"
+      },
+      {
+        "date": "21.08.2026 08:42:10",
+        "action": "Talep güncellendi.",
+        "user": "Mock API"
+      }
+    ]
+  }
+]

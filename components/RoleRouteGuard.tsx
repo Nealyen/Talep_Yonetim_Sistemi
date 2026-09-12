@@ -1,0 +1,52 @@
+'use client';
+
+/**
+ * DİKKAT — ÖLÜ / KULLANILMAYAN DOSYA: Bu, layout/RoleRouteGuard.tsx'in eski bir
+ * kopyasıdır. Farklı bir API'ye sahiptir (tekil `allowedRole` alır, gerçek olan ise
+ * `allowedRoles` dizisi alır) ve TicketContext'ten UserRole import etmeye çalışır
+ * (yanlış context). Projenin HİÇBİR YERİNDEN import edilmiyor — gerçek/kullanılan olan
+ * layout/RoleRouteGuard.tsx'tir. Kafa karışıklığını önlemek için bu dosya güvenle
+ * silinebilir.
+ */
+
+// yetki kontrol alanı
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Message } from 'primereact/message';
+import { UserRole, useTickets } from '@/layout/context/TicketContext';
+
+interface RoleRouteGuardProps {
+    allowedRole: UserRole;
+    children: React.ReactNode;
+}
+
+const RoleRouteGuard = ({ allowedRole, children }: RoleRouteGuardProps) => {
+    const router = useRouter();
+    const { activeRole } = useTickets();
+    const [roleReady, setRoleReady] = useState(false);
+
+    useEffect(() => {
+        const savedRole = localStorage.getItem('activeRole');
+        if (savedRole && savedRole !== allowedRole) {
+            router.replace('/');
+            return;
+        }
+        if (!savedRole && activeRole !== allowedRole) {
+            router.replace('/');
+            return;
+        }
+        setRoleReady(true);
+    }, [activeRole, allowedRole, router]);
+
+    if (!roleReady) {
+        return <Message severity="info" text="Yetki kontrolü yapılıyor..." />;
+    }
+
+    if (activeRole !== allowedRole) {
+        return <Message severity="warn" text="Bu sayfaya erişim yetkiniz bulunmuyor." />;
+    }
+
+    return <>{children}</>;
+};
+
+export default RoleRouteGuard;
